@@ -43,9 +43,11 @@ function render() {
     const li = document.createElement('li');
     li.className = 'card';
     // Pas de jaquette en cache -> une affiche dans notre système, pas un trou gris
-    li.innerHTML = g.art.portrait
+    const cover = g.art.portrait
       ? `<img src="${g.art.portrait}" alt="" loading="lazy">`
       : `<div class="fallback">${g.name}</div>`;
+    // La plateforme d'origine est toujours visible — jamais implicite.
+    li.innerHTML = cover + `<span class="badge">${g.platformBadge}</span>`;
     li.addEventListener('click', () => (i === index ? launch() : select(i)));
     rail.appendChild(li);
   }
@@ -76,9 +78,10 @@ function select(i) {
   const bg = g.art.hero || g.art.portrait;
   wall.style.backgroundImage = bg ? `url(${bg})` : 'none';
 
-  document.getElementById('kicker').textContent = g.lastPlayed ? 'CONTINUER' : 'JOUER';
+  document.getElementById('kicker').textContent =
+    `${g.platformName.toUpperCase()}  ·  ${g.lastPlayed ? 'CONTINUER' : 'JOUER'}`;
   document.getElementById('title').textContent = g.name;
-  document.getElementById('meta').textContent = `${fmtSize(g.sizeBytes)}  ·  ${fmtDate(g.lastPlayed)}  ·  APPID ${g.appid}`;
+  document.getElementById('meta').textContent = `${fmtSize(g.sizeBytes)}  ·  ${fmtDate(g.lastPlayed)}`;
 }
 
 // --- Le lancement : le seul endroit où la fiction s'exprime ---
@@ -99,9 +102,11 @@ function launch() {
   setTimeout(() => grant.classList.add('on'), 620);
 
   setTimeout(() => {
+    // L'URI vient du provider de la plateforme, jamais codé en dur ici :
+    // c'est ce qui permettra à Epic / EA / GOG de marcher sans toucher au shell.
     // Point de bascule vers Tauri : cette ligne deviendra une commande Rust
-    // exposée explicitement, avec l'appid validé côté natif.
-    window.location.href = `steam://rungameid/${g.appid}`;
+    // exposée explicitement, avec l'URI validé côté natif.
+    window.location.href = g.launch;
   }, 900);
 
   setTimeout(() => overlay.classList.remove('on'), 1600);

@@ -119,6 +119,16 @@ body {
   text-transform: uppercase; color: var(--concrete-900);
   background: var(--spray-cyan);
 }
+/* Badge de plateforme : d'où vient le jeu, toujours visible.
+   Posé de travers, façon autocollant — la règle du désaxé. */
+.badge {
+  position: absolute; top: 8px; left: -4px;
+  background: var(--concrete-900); color: var(--ink);
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px; padding: 4px 8px;
+  transform: rotate(-2.5deg);
+  border-right: 3px solid var(--spray-cyan);
+}
 .card.sel {
   border-color: var(--ink);
   /* Frange chromatique en aplat — la signature, jamais un glow */

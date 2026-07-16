@@ -1,6 +1,14 @@
-// Spike : lire la vraie bibliothèque Steam de la machine.
-// Sans Tauri, sans Rust — on valide d'abord que la donnée est là et exploitable.
+// Provider Steam.
+//
+// Contrat commun à toutes les plateformes (voir scripts/library.js) :
+//   id, name  -> identité de la plateforme
+//   scan()    -> { games: [...] }
+// Chaque jeu retourné DOIT porter : platform, id, name, launch, art.
+//
 // Cette logique sera reportée côté Rust une fois le scaffold Tauri en place.
+
+const ID = 'steam';
+const NAME = 'Steam';
 
 const fs = require('fs');
 const path = require('path');
@@ -101,11 +109,13 @@ function readGames(libraryPath) {
         const state = parseVDF(fs.readFileSync(path.join(appsDir, f), 'utf8')).AppState;
         if (!state || !state.appid || !state.name) return null;
         return {
-          appid: state.appid,
+          platform: ID,                 // d'où vient le jeu — jamais implicite
+          id: String(state.appid),      // identifiant DANS sa plateforme
           name: state.name,
+          launch: `steam://rungameid/${state.appid}`,
           installDir: state.installdir,
           sizeBytes: Number(state.SizeOnDisk || 0),
-          lastPlayed: Number(state.LastPlayed || 0), // epoch — c'est notre tri par récence
+          lastPlayed: Number(state.LastPlayed || 0), // epoch — notre tri par récence
           library: libraryPath,
         };
       } catch {
@@ -142,39 +152,20 @@ function findArtwork(steamRoot, appid) {
   return found;
 }
 
+/** Détecte si la plateforme est présente sur la machine, sans lever d'erreur. */
+function detect() {
+  return findSteamRoot() !== null;
+}
+
 function scan() {
   const steamRoot = findSteamRoot();
-  if (!steamRoot) throw new Error('Steam introuvable.');
+  if (!steamRoot) throw new Error('Steam introuvable sur cette machine.');
 
   const libraries = findLibraryFolders(steamRoot);
   const games = libraries.flatMap(readGames).filter(isGame);
+  for (const g of games) g.art = findArtwork(steamRoot, g.id);
 
-  // Tri par récence — la loi n°4 : la récence bat le rangement
-  games.sort((a, b) => b.lastPlayed - a.lastPlayed);
-
-  for (const g of games) g.art = findArtwork(steamRoot, g.appid);
-  return { steamRoot, libraries, games };
+  return { root: steamRoot, libraries, games };
 }
 
-// --- Sortie lisible ---
-if (require.main === module) {
-  const { steamRoot, libraries, games } = scan();
-  console.log('Steam      :', steamRoot);
-  console.log('Biblios    :', libraries.join('\n             '));
-  console.log('Jeux       :', games.length);
-  console.log('');
-
-  const fmt = n => (n / 1e9).toFixed(1) + ' Go';
-  const date = t => t ? new Date(t * 1000).toLocaleDateString('fr-FR') : '—';
-
-  for (const g of games.slice(0, 25)) {
-    const art = [g.art.portrait && 'jaquette', g.art.hero && 'hero', g.art.logo && 'logo']
-      .filter(Boolean).join('+') || 'AUCUN VISUEL';
-    console.log(
-      `${String(g.appid).padStart(7)}  ${g.name.slice(0, 38).padEnd(38)}  ${fmt(g.sizeBytes).padStart(8)}  ${date(g.lastPlayed).padStart(10)}  ${art}`
-    );
-  }
-  if (games.length > 25) console.log(`... et ${games.length - 25} autres`);
-}
-
-module.exports = { scan, parseVDF, isGame };
+module.exports = { id: ID, name: NAME, detect, scan, parseVDF, isGame };
