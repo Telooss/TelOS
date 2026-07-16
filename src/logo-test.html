@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>telOS — logo</title>
+<style>
+  body { background: #0a0a0d; margin: 0; padding: 50px 60px; font-family: monospace; }
+  .frame { background: #16161A; max-width: 880px; }
+  .row { display: flex; align-items: center; gap: 50px; margin-top: 50px; }
+  .chip { background: #16161A; padding: 16px 20px; }
+  .lbl { color: #8C8C99; font-size: 11px; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="lbl">Logo corrompu — intro / chargement uniquement</div>
+<div class="frame">
+<svg id="logo" viewBox="0 0 420 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Le wordmark complet, défini une fois, réutilisé pour le datamosh -->
+    <g id="mark">
+
+      <!-- "tel" — fin, discret, humain. Le calme avant le système. -->
+      <g stroke="#8C8C99" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <!-- t : hampe + queue, barre à la hauteur d'x -->
+        <path d="M 30,62 L 30,160 Q 30,175 46,175"/>
+        <path d="M 10,111 L 52,111"/>
+
+        <!-- e : UN seul tracé continu (barre -> panse -> terminaison ouverte), puis miroir horizontal.
+             Le retournement est le parti-pris ; le tracé, lui, est propre et fini. -->
+        <g transform="translate(58,111)">
+          <g transform="translate(64,0) scale(-1,1)">
+            <path d="M 5,32 L 59,32 A 27,27 0 1 0 45.5,55.4"/>
+          </g>
+        </g>
+
+        <!-- l : pleine hauteur, cale le "tel" sur le O -->
+        <path d="M 138,25 L 138,175"/>
+      </g>
+
+      <!-- "OS" — massif. Même poids de trait pour les deux lettres : elles font bloc. -->
+      <!-- Frange chromatique : copies décalées EN APLAT (jamais de flou/dégradé) -->
+      <g fill="none" stroke-width="34" stroke-linecap="round">
+        <!-- magenta, décalée haut-droite -->
+        <g transform="translate(5,-4)" stroke="#FF2D7E">
+          <rect x="171" y="42" width="84" height="116" rx="38"/>
+          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
+        </g>
+        <!-- jaune, décalée bas-gauche -->
+        <g transform="translate(-4,3)" stroke="#FFE93D">
+          <rect x="171" y="42" width="84" height="116" rx="38"/>
+          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
+        </g>
+        <!-- cyan, la copie principale -->
+        <g stroke="#00E5C7">
+          <rect x="171" y="42" width="84" height="116" rx="38"/>
+          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- La déchirure ne mord QUE sur le OS (x >= 150) : "tel" reste intact.
+         Bords volontairement irréguliers — une bande parfaitement droite ferait barre de biffage. -->
+    <clipPath id="tear">
+      <polygon points="150,101 232,98 310,103 420,100 420,125 336,122 244,127 150,124"/>
+    </clipPath>
+  </defs>
+
+  <rect width="420" height="200" fill="#16161A"/>
+
+  <!-- 1. le wordmark, intact -->
+  <use href="#mark"/>
+
+  <!-- 2. DATAMOSH : on efface la bande et on la redessine décalée.
+        C'est la vraie corruption — pas un trait posé par-dessus. -->
+  <g clip-path="url(#tear)">
+    <rect x="145" y="90" width="285" height="45" fill="#16161A"/>
+    <use href="#mark" transform="translate(17,1)"/>
+  </g>
+</svg>
+</div>
+
+<div class="lbl" style="margin-top:40px">Logo au repos — accueil</div>
+<div class="frame">
+  <svg viewBox="0 0 420 200" width="100%"><rect width="420" height="200" fill="#16161A"/><use href="#mark"/></svg>
+</div>
+
+<div class="row">
+  <div>
+    <div class="lbl">240px — le logo d'accueil</div>
+    <div class="chip"><svg viewBox="0 0 420 200" width="240"><use href="#mark"/></svg></div>
+  </div>
+  <div>
+    <div class="lbl">120px — test lisibilité</div>
+    <div class="chip"><svg viewBox="0 0 420 200" width="120"><use href="#mark"/></svg></div>
+  </div>
+  <div>
+    <div class="lbl">64px — favicon</div>
+    <div class="chip"><svg viewBox="160 20 260 160" width="64"><use href="#mark"/></svg></div>
+  </div>
+</div>
+
+</body>
+</html>

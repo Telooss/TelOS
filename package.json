@@ -5,6 +5,7 @@
   "description": "TelOS — shell console plein écran pour PC hôte, streamé vers un handheld via Sunshine/Moonlight",
   "type": "commonjs",
   "scripts": {
+    "dev": "node scripts/dev-server.js",
     "prototype": "node prototype/server.js"
   },
   "repository": {

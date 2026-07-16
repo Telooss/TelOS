@@ -156,15 +156,19 @@ Les logos et l'app du téléphone in-game sont de la **prop de jeu** : dessinée
 
 DedSec est maximaliste, bruyant, illisible s'il pilote la structure. La Switch est structurellement parfaite et esthétiquement vide. **Le chaos en surface, la rigueur en dessous.** Le glitch ne doit jamais coûter une frame de navigation ni un aller-retour de compréhension.
 
-### La métaphore (leçon Wii)
+### La métaphore (leçon Wii) — DÉCISION : uniquement au lancement
 
-**Le PC hôte est un système compromis. TelOS est le panneau d'intrusion.**
+**Le PC hôte est un système compromis. telOS est le panneau d'intrusion.**
 
 - Les jeux ne sont pas des « applications » → ce sont des **cibles**.
 - Lancer n'est pas « démarrer » → c'est **pénétrer**.
 - Le PC hôte est un **nœud**, avec un statut de lien.
 
-**Pourquoi ça marche ici et pas ailleurs :** la plomberie réelle **colle** à la fiction. Il y a un *vrai* hôte distant, une *vraie* latence, un *vrai* débit, un *vrai* lien à établir. Le monospace de statut n'est pas décoratif — **il affiche les vraies stats Moonlight**. C'est de la fiction diégétique honnête, et c'est ce qui rend le concept fort au lieu de kitsch.
+**Où ça vit, et où ça ne vit pas.** Tranché : cette métaphore vit **uniquement dans la séquence de lancement**. En permanence, elle est fatigante et vieillit en trois jours. Réservée à l'instant où on appuie sur A, elle devient une récompense — exactement le principe déjà posé pour le glitch : *un événement, pas un fond d'écran.*
+
+**Le reste du temps, l'interface parle normalement** : « Jouer », « Bibliothèque », « Réglages », des jeux — pas de « cibles », pas de « pénétrer », pas de « nœud » dans l'UI au repos.
+
+**Pourquoi ça marche malgré tout, et pas ailleurs :** la plomberie réelle **colle** à la fiction. Il y a un *vrai* hôte distant, une *vraie* latence, un *vrai* débit. Le monospace du bandeau de statut n'est pas décoratif — **il affiche les vraies stats Moonlight**, en permanence, sans jouer la métaphore. C'est de la fiction diégétique honnête, réservée à son moment fort, et c'est ce qui la rend forte plutôt que kitsch.
 
 ### Le système concret
 
@@ -206,10 +210,38 @@ Grain de béton, pochoir TelOS bombé en coin, stickers légèrement de travers.
 
 ---
 
+## Le nom : telOS
+
+Graphie fixée, diégétique : **`telOS`** — `tel` en minuscules, `OS` en capitales. Calqué sur **ctOS** (Watch Dogs) : même rapport de casse, sauf que ce réseau-ci est le tien. Cette graphie s'applique partout où le nom est écrit en toutes lettres à l'écran (logo, titres, texte de marque) — pas aux identifiants techniques (repo GitHub `TelOS`, package npm `telos`), qui suivent les conventions de leur écosystème.
+
+## Système typographique
+
+- **Interface** (menus, titres de jeux, méta) → **Oxanium** (Google Fonts, OFL, embarquée dans le repo).
+- **Identité et événements** (wordmark, séquence de lancement, `ACCÈS ACCORDÉ`) → **Doctor Glitch** (DaFont, licence usage personnel).
+
+**Contrainte de licence, résolue proprement.** Doctor Glitch est gratuite pour un usage personnel — parfaitement légal pour ce projet (perso, non commercial) — mais sa licence n'autorise pas la redistribution du fichier. Elle est donc utilisée **localement, jamais committée** dans le repo (`.gitignore`), avec sa provenance documentée pour pouvoir la retélécharger en 30 secondes si besoin. Même règle si le repo devient public un jour : aucune violation possible, puisque le fichier n'y a jamais été.
+
+**Contrainte technique découverte à l'usage : Doctor Glitch est caps-only.** Elle n'a pas de glyphes minuscules distincts (courant sur les fontes stencil gratuites) — taper `telOS` dedans ressort `TELOS`. Elle ne peut donc pas porter le wordmark seule sans casser la règle de casse ci-dessus.
+
+**Solution retenue : un wordmark composite, pas un compromis.** `tel` en Oxanium fine et grise, discret — `OS` en Doctor Glitch, énorme et corrompu. Ce n'est pas qu'un contournement technique : ça matérialise le concept, le `tel` humain et discret à côté du `OS` système qui pète l'écran. Ça colle en plus au principe fanzine déjà posé plus haut (« le mélange de fontes est le style »).
+
+**Le Ø n'existe pas non plus dans la fonte** (jeu de caractères limité aux glyphes de base). Plutôt que de dépendre d'un glyphe absent, il est **redessiné à la main en SVG** : un tracé à plusieurs points, volontairement irrégulier — pas une barre parfaitement droite façon règle, dans l'esprit du « désaxé » qu'on s'impose partout ailleurs.
+
+**Candidates écartées :** Rubik Glitch et Rubik Glitch Pop (Google Fonts, libres, glyphes casse-mixte complets — techniquement plus simples) ont été testées puis rejetées à l'usage : rendu jugé trop grossier/organique, pas assez « pochoir net » pour porter l'identité.
+
+**Piège à éviter, déjà identifié en pratique :** une proposition de logo inspirée de références IA génériques (crâne en circuits imprimés, halos lumineux doux sur fond clair) a été écartée — elle contredit à la fois la règle « pas de mascotte, pas de crâne » (déjà posée plus haut) et la règle des aplats (les dégradés doux bandent en streaming H.265). Le style DedSec se juge à l'échec de ce genre de proposition : joli en apparence, mais hors-système.
+
+---
+
+## Décisions arrêtées
+
+- [x] **WD2 (coloré)** retenu comme ancrage, pas Legion (gris/résistance).
+- [x] **La métaphore d'intrusion** vit uniquement dans la séquence de lancement — voir plus haut.
+- [x] **Système typographique** : Oxanium + Doctor Glitch, wordmark composite, Ø dessiné à la main — voir plus haut.
+
 ## Questions ouvertes
 
-- [ ] **WD2 (coloré) ou Legion (sombre et gris)** comme ancrage ?
-- [ ] **La métaphore d'intrusion** — on y va, ou c'est trop ?
+- [ ] Logo SVG final : composition posée, **vérification visuelle en attente** (aucun souci de conception — un souci d'outil de capture d'écran côté environnement de dev a interrompu la boucle de vérification en cours de session).
 
 ## Références communautaires
 

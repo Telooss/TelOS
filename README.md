@@ -1,10 +1,12 @@
-# TelOS
+# telOS
 
 > Un shell console plein écran qui remplace Steam Big Picture — pensé pour être **streamé**, pas pour être regardé de près.
 
+*(Le nom s'écrit `telOS` — `tel` en minuscules, `OS` en capitales — un clin d'œil à ctOS dans Watch Dogs. Le repo GitHub et le paquet npm restent `TelOS` / `telos`, conventions techniques normales.)*
+
 ## L'idée
 
-TelOS tourne **sur le PC hôte**. [Sunshine](https://github.com/LizardByte/Sunshine) streame son affichage, et [Moonlight](https://moonlight-stream.org) le reçoit sur un handheld / téléphone / tablette. Le client distant n'est **qu'un écran et une manette** : tout — l'UI, la bibliothèque, le lancement des jeux — s'exécute sur l'hôte.
+telOS tourne **sur le PC hôte**. [Sunshine](https://github.com/LizardByte/Sunshine) streame son affichage, et [Moonlight](https://moonlight-stream.org) le reçoit sur un handheld / téléphone / tablette. Le client distant n'est **qu'un écran et une manette** : tout — l'UI, la bibliothèque, le lancement des jeux — s'exécute sur l'hôte.
 
 ```
 ┌──────────────── PC hôte (Windows) ────────────────┐        ┌──── Client ────┐
@@ -24,17 +26,23 @@ Jouer confortablement à ses titres PC depuis un handheld, y compris **via un pa
 
 ## État
 
-🚧 **Pré-alpha.** La direction technique est arrêtée, la direction artistique est en cours de définition. Rien de fonctionnel n'est encore livré.
+🚧 **Pré-alpha.** Architecture et identité visuelle arrêtées. Rien de fonctionnel n'est encore livré.
+
+👉 Plan de réalisation phasé complet (design, natif, streaming, et les extensions musique / communication / multi-client) : voir [`docs/roadmap.md`](docs/roadmap.md) — miroir du plan tenu dans Notion.
 
 | Chantier | État |
 |---|---|
 | Architecture (hôte vs client) | ✅ Arrêtée |
 | Choix du moteur | ✅ Tauri (voir ci-dessous) |
 | Recherche design | ✅ [`docs/design-research.md`](docs/design-research.md) |
-| Direction artistique | 🔄 En cours — piste DedSec |
+| Direction artistique (DedSec / WD2) | ✅ Arrêtée |
+| Système typographique (`telOS`, Oxanium + Doctor Glitch) | ✅ Arrêté |
+| Maquette du shell | 🔄 En cours |
+| Cœur natif Tauri | ⬜ À faire |
 | Scan bibliothèque Steam | ⬜ À faire |
 | Lancement des jeux | ⬜ À faire |
 | Intégration Sunshine | ⬜ À faire |
+| Musique / communication / multi-client | ⬜ À faire — voir roadmap |
 
 ## Décisions techniques
 
@@ -69,8 +77,18 @@ L'interface est **compressée en H.265 et affichée sur un petit écran, parfois
 ## Structure
 
 ```
-docs/           Recherche design et décisions
-prototype/      Exploration jetable (première itération web, abandonnée)
+docs/                    Recherche design, décisions, roadmap
+src/                      L'UI de telOS (HTML/CSS/JS), servie telle quelle par Tauri plus tard
+src/fonts/                Oxanium (OFL, committée) ; Doctor Glitch (usage perso, gitignorée — voir docs/design-research.md)
+scripts/dev-server.js     Serveur de dev, sert src/
+.claude/skills/telos-design/  Skill projet : système de design, interdits, boucle de vérification visuelle
+prototype/                Exploration jetable (première itération web, abandonnée)
+```
+
+## Développement
+
+```bash
+npm run dev         # sert src/ sur http://localhost:5173
 ```
 
 ## Prototype (historique)

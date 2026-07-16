@@ -1,0 +1,165 @@
+/* telOS — système de design.
+   Règles dures : aplats francs, bords nets, contraste élevé, gros objets.
+   Aucun dégradé décoratif, aucune ombre douce : ça bande en H.265. */
+
+@font-face {
+  font-family: 'Oxanium';
+  src: url('fonts/Oxanium-Variable.ttf') format('truetype');
+  font-weight: 300 800;
+  font-display: block;
+}
+/* Doctor Glitch : licence usage perso, jamais committée. Repli propre si absente. */
+@font-face {
+  font-family: 'DoctorGlitch';
+  src: url('fonts/DoctorGlitch.otf') format('opentype');
+  font-display: swap;
+}
+
+:root {
+  --concrete-900: #16161A;
+  --concrete-800: #1E1E23;
+  --concrete-700: #2A2A31;
+  --ink: #F2F2F4;
+  --ink-dim: #8C8C99;
+  --spray-cyan: #00E5C7;
+  --spray-magenta: #FF2D7E;
+  --spray-yellow: #FFE93D;
+  --signal-green: #6BFF4D;
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--concrete-900);
+  color: var(--ink);
+  font-family: 'Oxanium', sans-serif;
+  user-select: none;
+}
+
+.stage { position: relative; height: 100vh; overflow: hidden; }
+
+/* --- Le mur --- */
+.wall {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: opacity .18s steps(3);
+}
+/* Voile en APLAT (pas un dégradé) pour que le texte tienne par-dessus l'art */
+.wall-veil { position: absolute; inset: 0; background: var(--concrete-900); opacity: .78; }
+.halftone {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(var(--concrete-700) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: .25;
+}
+
+.ui {
+  position: relative; height: 100%;
+  display: grid; grid-template-rows: auto 1fr auto auto;
+  padding: 26px 0 18px;
+}
+.statusbar, .hero, .sysbar { padding: 0 44px; }
+
+/* --- Bandeau ambiant --- */
+.statusbar { display: flex; align-items: center; justify-content: space-between; }
+.logo { width: 132px; height: 63px; }
+.readout {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 13px; letter-spacing: 1px;
+  color: var(--ink-dim);
+}
+.readout b { color: var(--ink); font-weight: 400; }
+.sep { color: var(--concrete-700); }
+.stat { display: flex; align-items: center; gap: 8px; }
+.led {
+  width: 9px; height: 9px; background: var(--signal-green);
+  display: inline-block;
+}
+
+/* --- Le jeu sélectionné --- */
+/* Loi n°1 : le jeu sélectionné est le plus gros objet à l'écran. */
+.hero { align-self: center; max-width: 66%; }
+.kicker {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 4px;
+  color: var(--spray-cyan); margin-bottom: 14px; min-height: 16px;
+}
+.title {
+  font-size: clamp(56px, 7.4vw, 104px); font-weight: 800; line-height: .92;
+  letter-spacing: -2px; text-transform: uppercase;
+}
+.meta {
+  font-family: var(--mono); font-size: 14px; color: var(--ink-dim);
+  margin-top: 18px; letter-spacing: 1px;
+}
+
+/* --- Rail --- */
+/* Calé à GAUCHE, jamais centré : au premier jeu, un rail centré laisse
+   la moitié de l'écran vide (PS4 / Switch calent à gauche). */
+.railvp { overflow: hidden; padding: 16px 0 14px; }
+.rail {
+  display: flex; gap: 20px; list-style: none; padding: 10px 44px;
+  transition: transform .18s steps(4); /* sec, façon Switch — pas d'easing mou */
+  will-change: transform;
+}
+.card {
+  position: relative; flex: 0 0 auto;
+  width: 172px; height: 258px;
+  background: var(--concrete-800);
+  border: 2px solid var(--concrete-700);
+  overflow: hidden; cursor: pointer;
+  transition: transform .12s steps(2);
+}
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Repli quand Steam n'a aucune jaquette en cache : une affiche, pas un trou */
+.card .fallback {
+  position: absolute; inset: 0; padding: 14px;
+  display: flex; align-items: flex-end;
+  font-weight: 800; font-size: 19px; line-height: 1.02;
+  text-transform: uppercase; color: var(--concrete-900);
+  background: var(--spray-cyan);
+}
+.card.sel {
+  border-color: var(--ink);
+  /* Frange chromatique en aplat — la signature, jamais un glow */
+  box-shadow: 5px -4px 0 var(--spray-magenta), -4px 3px 0 var(--spray-yellow);
+  transform: translateY(-8px);
+}
+
+/* --- Barre système --- */
+.sysbar {
+  display: flex; gap: 26px; align-items: center;
+  border-top: 2px solid var(--concrete-700); padding-top: 12px;
+  font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+  letter-spacing: 1px;
+}
+.hint { display: flex; align-items: center; gap: 8px; }
+kbd {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  background: var(--concrete-700); color: var(--ink);
+  padding: 3px 7px;
+}
+kbd.ka { background: var(--signal-green); color: var(--concrete-900); }
+
+/* --- L'intrusion : uniquement au lancement --- */
+.intrusion {
+  position: absolute; inset: 0; z-index: 10; display: none;
+  background: var(--concrete-900);
+  flex-direction: column; justify-content: center; padding-left: 44px;
+}
+.intrusion.on { display: flex; animation: tear .09s steps(2) infinite; }
+@keyframes tear {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-5px); }
+  100% { transform: translateX(3px); }
+}
+.log {
+  font-family: var(--mono); font-size: 17px; color: var(--spray-cyan);
+  line-height: 1.9; letter-spacing: 1px;
+}
+.grant {
+  font-family: 'DoctorGlitch', 'Oxanium', sans-serif;
+  font-size: 76px; color: var(--signal-green);
+  margin-top: 22px; opacity: 0; letter-spacing: 2px;
+}
+.grant.on { opacity: 1; }

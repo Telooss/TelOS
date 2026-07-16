@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>TelOS — test typo</title>
+<style>
+  @font-face { font-family: 'Oxanium'; src: url('fonts/Oxanium-Variable.ttf') format('truetype'); font-weight: 300 800; }
+  @font-face { font-family: 'RubikGlitch'; src: url('fonts/RubikGlitch-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'RubikGlitchPop'; src: url('fonts/RubikGlitchPop-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'DoctorGlitch'; src: url('fonts/DoctorGlitch.otf') format('opentype'); }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #16161A; color: #F2F2F4; padding: 60px; font-family: Oxanium; }
+  section { margin-bottom: 70px; }
+  .label { font-family: 'Space Mono', monospace; font-size: 13px; color: #8C8C99; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; }
+
+  h1.glitch { font-family: RubikGlitch; font-size: 76px; color: #00E5C7; }
+  h1.pop { font-family: RubikGlitchPop; font-size: 76px; color: #FF2D7E; }
+  h1.oxa { font-family: Oxanium; font-weight: 800; font-size: 76px; letter-spacing: -1px; }
+  .sub { font-family: Oxanium; font-weight: 500; font-size: 22px; color: #8C8C99; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <section>
+    <div class="label">CASSE MIXTE — Rubik Glitch (cyan)</div>
+    <h1 class="glitch">telOS</h1>
+  </section>
+  <section>
+    <div class="label">CASSE MIXTE — Rubik Glitch Pop (magenta)</div>
+    <h1 class="pop">telOS</h1>
+  </section>
+  <section>
+    <div class="label">CASSE MIXTE — Doctor Glitch (jaune, usage perso — jamais commit)</div>
+    <h1 style="font-family:DoctorGlitch; font-size:76px; color:#FFE93D;">telOS</h1>
+  </section>
+  <section>
+    <div class="label">WORDMARK COMPOSITE — Oxanium fine + Doctor Glitch</div>
+    <h1 style="display:flex; align-items:baseline; gap:6px;">
+      <span style="font-family:Oxanium; font-weight:300; font-size:44px; color:#8C8C99;">tel</span>
+      <span style="font-family:DoctorGlitch; font-size:76px; color:#00E5C7;">OS</span>
+    </h1>
+  </section>
+  <section>
+    <div class="label">LOGO SVG — wordmark + Ø dessiné à la main + glitch RGB en aplats</div>
+    <svg width="640" height="260" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+      <rect width="640" height="260" fill="#16161A"/>
+
+      <text x="40" y="176" font-family="Oxanium" font-weight="300" font-size="56" fill="#8C8C99">tel</text>
+
+      <g transform="rotate(-1.5 380 130)">
+        <!-- split RGB : copies décalées en aplat, pas de flou -->
+        <text x="176" y="196" font-family="DoctorGlitch" font-size="150" fill="#FF2D7E">OS</text>
+        <text x="184" y="188" font-family="DoctorGlitch" font-size="150" fill="#FFE93D" opacity="0.9">OS</text>
+        <text x="180" y="192" font-family="DoctorGlitch" font-size="150" fill="#00E5C7">OS</text>
+
+        <!-- barre du Ø : tracé irrégulier, pas une règle parfaite -->
+        <path d="M 200 220 L 218 176 L 224 140 L 234 92" stroke="#16161A" stroke-width="15" fill="none" stroke-linecap="square"/>
+        <path d="M 202 218 L 220 174 L 226 138 L 236 90" stroke="#F2F2F4" stroke-width="8" fill="none" stroke-linecap="square"/>
+      </g>
+
+      <!-- éclats / griffures, pas une mascotte -->
+      <rect x="560" y="60" width="10" height="10" fill="#FF2D7E" transform="rotate(12 565 65)"/>
+      <rect x="70" y="200" width="14" height="4" fill="#00E5C7" opacity="0.8"/>
+      <path d="M 540 210 L 600 206" stroke="#8C8C99" stroke-width="2" opacity="0.6"/>
+    </svg>
+  </section>
+  <section>
+    <div class="label">ACCÈS ACCORDÉ — glitch</div>
+    <h1 class="glitch" style="font-size:52px; color:#6BFF4D;">ACCÈS ACCORDÉ</h1>
+  </section>
+  <section>
+    <div class="label">Baldur's Gate 3 — Oxanium 800 (interface)</div>
+    <h1 class="oxa">BALDUR'S GATE 3</h1>
+    <div class="sub">RPG · Continuer la partie</div>
+  </section>
+</body>
+</html>

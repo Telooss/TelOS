@@ -25,14 +25,19 @@ config.local.json
 .cache/
 library.local.json
 
+# Fontes sous licence usage personnel (DaFont) — jamais redistribuées.
+# Provenance et instructions de récupération : src/fonts/README.md
+src/fonts/DoctorGlitch.otf
+
 # OS
 Thumbs.db
 desktop.ini
 .DS_Store
 
-# Éditeurs
+# Éditeurs & outils
 .vscode/
 .idea/
+.serena/
 *.swp
 
 # Logs
