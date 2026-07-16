@@ -125,29 +125,58 @@ function readGames(libraryPath) {
     .filter(Boolean);
 }
 
-/** Cherche les jaquettes déjà présentes dans le cache local de Steam. */
+/** Collecte récursivement les fichiers sous `dir`, jusqu'à `depth` niveaux. */
+function collectFiles(dir, depth, out) {
+  if (depth === 0) return;
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) collectFiles(p, depth - 1, out);
+    else out.push(p);
+  }
+}
+
+// `library_hero_blur.jpg` contient `library_hero` : sans exclusion explicite,
+// on servirait la version floue à la place du vrai visuel.
+const KIND = {
+  portrait: f => f.includes('library_600x900'),
+  hero: f => f.includes('library_hero') && !f.includes('library_hero_blur'),
+  logo: f => f.includes('logo'),
+};
+
+/**
+ * Steam a empilé trois structures de cache au fil des versions :
+ *   librarycache/<appid>_library_hero.jpg          (à plat, ancien)
+ *   librarycache/<appid>/library_hero.jpg          (2 niveaux)
+ *   librarycache/<appid>/<hash>/library_hero.jpg   (3 niveaux, récent)
+ * Les trois coexistent sur une même machine — d'où la recherche récursive.
+ */
 function findArtwork(steamRoot, appid) {
   const cache = path.join(steamRoot, 'appcache', 'librarycache');
   const found = {};
   if (!fs.existsSync(cache)) return found;
 
-  // Steam a changé de structure : parfois à plat, parfois dans un sous-dossier par appid
-  const roots = [cache, path.join(cache, String(appid))];
-  const wanted = { portrait: 'library_600x900', hero: 'library_hero', logo: 'logo' };
+  const candidates = [];
 
-  for (const root of roots) {
-    if (!fs.existsSync(root)) continue;
-    let entries;
-    try { entries = fs.readdirSync(root); } catch { continue; }
-    for (const [kind, marker] of Object.entries(wanted)) {
-      if (found[kind]) continue;
-      const hit = entries.find(e =>
-        e.toLowerCase().includes(marker) &&
-        (root === cache ? e.startsWith(String(appid)) : true) &&
-        /\.(jpg|png)$/i.test(e)
-      );
-      if (hit) found[kind] = path.join(root, hit);
+  // Structures 2 et 3 niveaux : tout ce qui vit sous librarycache/<appid>/
+  const appDir = path.join(cache, String(appid));
+  if (fs.existsSync(appDir)) collectFiles(appDir, 3, candidates);
+
+  // Structure à plat : librarycache/<appid>_library_hero.jpg
+  try {
+    const prefix = `${appid}_`;
+    for (const e of fs.readdirSync(cache, { withFileTypes: true })) {
+      if (e.isFile() && e.name.startsWith(prefix)) candidates.push(path.join(cache, e.name));
     }
+  } catch { /* cache illisible : on repart avec ce qu'on a */ }
+
+  for (const [kind, matches] of Object.entries(KIND)) {
+    const hit = candidates.find(p => {
+      const f = path.basename(p).toLowerCase();
+      return /\.(jpg|png)$/.test(f) && matches(f);
+    });
+    if (hit) found[kind] = hit;
   }
   return found;
 }

@@ -6,7 +6,11 @@
   "type": "commonjs",
   "scripts": {
     "dev": "node scripts/dev-server.js",
-    "prototype": "node prototype/server.js"
+    "prototype": "node prototype/server.js",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
   },
   "repository": {
     "type": "git",

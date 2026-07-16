@@ -1,0 +1,26 @@
+[package]
+name = "telos"
+version = "0.0.1"
+description = "telOS — shell console plein écran, streamé vers un handheld via Sunshine/Moonlight"
+authors = ["Telooss"]
+edition = "2021"
+
+[lib]
+# Le suffixe `_lib` évite un conflit de nom avec le binaire sur Windows.
+# https://github.com/rust-lang/cargo/issues/8519
+name = "telos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Encodage des jaquettes en data URI — premier jet volontairement simple,
+# avant de passer au protocole d'assets natif de Tauri.
+base64 = "0.22"
+open = "5"
+

@@ -1,5 +1,56 @@
 // telOS — shell.
 // Loi zéro : la nav répond dans la frame. Aucune animation ne fait attendre.
+//
+// Deux sources de données possibles, mêmes règles partout :
+//   - navigateur (npm run dev)  -> fetch vers scripts/dev-server.js
+//   - fenêtre Tauri             -> invoke des commandes Rust
+// C'est la seule chose qui distingue les deux : tout le reste du shell
+// (nav, rendu, séquence de lancement) est identique dans les deux mondes.
+// Tauri v2 expose invoke à deux endroits selon la configuration. On teste les
+// deux plutôt que de parier sur un seul : se tromper ici faisait silencieusement
+// retomber sur fetch(), qui dans une fenêtre Tauri reste en attente pour
+// toujours au lieu d'échouer — un blocage invisible, le pire des cas.
+const tauriInvoke = () =>
+  window.__TAURI__?.core?.invoke || window.__TAURI_INTERNALS__?.invoke || null;
+
+async function apiGetGames() {
+  const invoke = tauriInvoke();
+  if (invoke) return invoke('get_games');
+
+  // Filet de sécurité : un fetch qui ne répond pas doit échouer bruyamment,
+  // jamais laisser l'écran figé sur son message de chargement.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    const res = await fetch('/api/games', { signal: ctrl.signal });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Serveur injoignable (délai dépassé)');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function apiLaunch(g) {
+  const invoke = tauriInvoke();
+  if (invoke) return invoke('launch_game', { platform: g.platform, id: g.id });
+  window.location.href = g.launch; // pas de retour possible en navigateur : on quitte la page
+}
+
+// Affichage de la plateforme — un seul endroit, valable pour les deux sources.
+const PLATFORMS = {
+  steam: { name: 'Steam', badge: 'STEAM' },
+  epic: { name: 'Epic Games', badge: 'EPIC' },
+  ea: { name: 'EA App', badge: 'EA' },
+  ubisoft: { name: 'Ubisoft Connect', badge: 'UBI' },
+  gog: { name: 'GOG', badge: 'GOG' },
+  xbox: { name: 'Xbox / Game Pass', badge: 'XBOX' },
+};
+const platName = p => PLATFORMS[p]?.name || p;
+const platBadge = p => PLATFORMS[p]?.badge || p.toUpperCase();
 
 const rail = document.getElementById('rail');
 const wall = document.getElementById('wall');
@@ -11,18 +62,19 @@ const fmtDate = t => t
   ? new Date(t * 1000).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
   : 'JAMAIS LANCÉ';
 
+/** Un écran figé sur son message de chargement ne dit rien. Une panne doit se voir. */
+function fail(e) {
+  document.getElementById('title').textContent = 'BIBLIOTHÈQUE INTROUVABLE';
+  document.getElementById('meta').textContent = String(e && e.message ? e.message : e).toUpperCase();
+  document.getElementById('led').style.background = 'var(--signal-red)';
+  document.getElementById('host').textContent = 'HORS LIGNE';
+  console.error('[telOS]', e);
+}
+
 async function boot() {
-  let data;
-  try {
-    const res = await fetch('/api/games');
-    data = await res.json();
-    if (data.error) throw new Error(data.error);
-  } catch (e) {
-    document.getElementById('title').textContent = 'BIBLIOTHÈQUE INTROUVABLE';
-    document.getElementById('meta').textContent = String(e.message).toUpperCase();
-    document.getElementById('led').style.background = 'var(--signal-red)';
-    document.getElementById('host').textContent = 'HORS LIGNE';
-    return;
+  const data = await apiGetGames();
+  if (!data || !Array.isArray(data.games)) {
+    throw new Error('Réponse inattendue de la bibliothèque');
   }
 
   games = data.games;
@@ -47,7 +99,7 @@ function render() {
       ? `<img src="${g.art.portrait}" alt="" loading="lazy">`
       : `<div class="fallback">${g.name}</div>`;
     // La plateforme d'origine est toujours visible — jamais implicite.
-    li.innerHTML = cover + `<span class="badge">${g.platformBadge}</span>`;
+    li.innerHTML = cover + `<span class="badge">${platBadge(g.platform)}</span>`;
     li.addEventListener('click', () => (i === index ? launch() : select(i)));
     rail.appendChild(li);
   }
@@ -79,7 +131,7 @@ function select(i) {
   wall.style.backgroundImage = bg ? `url(${bg})` : 'none';
 
   document.getElementById('kicker').textContent =
-    `${g.platformName.toUpperCase()}  ·  ${g.lastPlayed ? 'CONTINUER' : 'JOUER'}`;
+    `${platName(g.platform).toUpperCase()}  ·  ${g.lastPlayed ? 'CONTINUER' : 'JOUER'}`;
   document.getElementById('title').textContent = g.name;
   document.getElementById('meta').textContent = `${fmtSize(g.sizeBytes)}  ·  ${fmtDate(g.lastPlayed)}`;
 }
@@ -102,11 +154,10 @@ function launch() {
   setTimeout(() => grant.classList.add('on'), 620);
 
   setTimeout(() => {
-    // L'URI vient du provider de la plateforme, jamais codé en dur ici :
-    // c'est ce qui permettra à Epic / EA / GOG de marcher sans toucher au shell.
-    // Point de bascule vers Tauri : cette ligne deviendra une commande Rust
-    // exposée explicitement, avec l'URI validé côté natif.
-    window.location.href = g.launch;
+    // En Tauri : le cœur natif revérifie (platform, id) dans SA propre
+    // bibliothèque scannée avant de lancer quoi que ce soit — jamais une
+    // URI qui viendrait directement du renderer.
+    apiLaunch(g);
   }, 900);
 
   setTimeout(() => overlay.classList.remove('on'), 1600);
@@ -155,4 +206,6 @@ addEventListener('touchend', e => {
 })();
 
 addEventListener('resize', () => games.length && select(index));
-boot();
+
+// Aucune erreur ne doit pouvoir passer inaperçue et laisser l'écran figé.
+boot().catch(fail);
