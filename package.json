@@ -1,0 +1,15 @@
+{
+  "name": "telos",
+  "version": "0.0.1",
+  "private": true,
+  "description": "TelOS — shell console plein écran pour PC hôte, streamé vers un handheld via Sunshine/Moonlight",
+  "type": "commonjs",
+  "scripts": {
+    "prototype": "node prototype/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Telooss/TelOS.git"
+  },
+  "license": "UNLICENSED"
+}

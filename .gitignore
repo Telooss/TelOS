@@ -1,0 +1,40 @@
+# Dépendances
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+dist/
+build/
+out/
+
+# Tauri / Rust (à venir)
+target/
+src-tauri/target/
+src-tauri/gen/
+
+# Secrets & config locale — ne JAMAIS committer
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+config.local.json
+
+# Cache jaquettes / bibliothèque scannée (données locales, propres à la machine)
+.cache/
+library.local.json
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*

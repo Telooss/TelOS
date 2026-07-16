@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0a0a12" />
+<title>NOVA — Console portable du futur</title>
+<style>
+  :root {
+    --bg: #07070d;
+    --fg: #f4f5fb;
+    --muted: #8a8ca3;
+    --accent: #6c8cff;
+    --accent2: #b06cff;
+    --card-radius: 22px;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+  }
+
+  /* Fond ambiant qui reprend la couleur de la jaquette sélectionnée */
+  #ambient {
+    position: fixed; inset: -20%;
+    background:
+      radial-gradient(60% 60% at 30% 25%, var(--glow, #223) 0%, transparent 60%),
+      radial-gradient(70% 70% at 80% 80%, var(--glow2, #212) 0%, transparent 60%);
+    filter: blur(60px) saturate(1.3);
+    opacity: .55;
+    transition: all 1.1s var(--ease);
+    z-index: 0;
+  }
+  #ambient::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(7,7,13,.2) 0%, rgba(7,7,13,.75) 100%);
+  }
+
+  .shell { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+
+  /* Barre du haut */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 34px 4px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 6px 20px rgba(108,140,255,.5);
+    position: relative;
+  }
+  .brand .mark::after {
+    content: ""; position: absolute; inset: 8px;
+    border-radius: 4px; background: var(--bg);
+  }
+  .brand h1 { font-size: 19px; letter-spacing: 4px; font-weight: 700; }
+  .brand span { color: var(--accent); }
+  .status { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .status .pill { display: flex; align-items: center; gap: 7px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 10px #3ddc84; }
+
+  /* Zone titre du jeu sélectionné */
+  .hero { padding: 10px 34px 0; min-height: 96px; }
+  .hero .cat { color: var(--accent); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; opacity: 0; transform: translateY(8px); transition: .5s var(--ease); }
+  .hero h2 { font-size: 40px; font-weight: 800; letter-spacing: -.5px; opacity: 0; transform: translateY(10px); transition: .5s var(--ease) .05s; }
+  .hero p { color: var(--muted); font-size: 15px; margin-top: 4px; opacity: 0; transform: translateY(10px); transition: .5s var(--ease) .1s; max-width: 620px; }
+  .hero.show .cat, .hero.show h2, .hero.show p { opacity: 1; transform: none; }
+
+  /* Carrousel */
+  .rail-wrap { flex: 1; display: flex; align-items: center; overflow: hidden; }
+  .rail {
+    display: flex; gap: 26px; padding: 30px 34px; align-items: center;
+    transition: transform .55s var(--ease);
+    will-change: transform;
+  }
+  .card {
+    position: relative; flex: 0 0 auto;
+    width: 190px; height: 264px; border-radius: var(--card-radius);
+    overflow: hidden; cursor: pointer;
+    transition: transform .45s var(--ease), box-shadow .45s var(--ease), filter .45s var(--ease);
+    transform: scale(.82); filter: brightness(.6) saturate(.85);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+  .card .cover { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
+  .card .cover .emoji { font-size: 92px; filter: drop-shadow(0 8px 20px rgba(0,0,0,.5)); margin-bottom: 46px; }
+  .card .label {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 30px 16px 16px; font-weight: 700; font-size: 15px; text-align: center;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.65));
+  }
+  .card.active {
+    transform: scale(1.16); filter: none;
+    box-shadow: 0 26px 60px rgba(0,0,0,.6), 0 0 0 3px rgba(255,255,255,.9), 0 0 40px var(--glow, #6c8cff);
+    z-index: 3;
+  }
+  .card.active .label { font-size: 16px; }
+
+  /* Barre d'aide en bas */
+  footer {
+    display: flex; align-items: center; gap: 26px;
+    padding: 16px 34px calc(16px + env(safe-area-inset-bottom));
+    color: var(--muted); font-size: 14px;
+  }
+  .key { display: flex; align-items: center; gap: 9px; }
+  .btn-glyph {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #07070d;
+  }
+  .g-a { background: #3ddc84; }
+  .g-b { background: #ff6b6b; }
+  .g-lr { background: #4a4d63; color: var(--fg); border-radius: 8px; width: auto; padding: 0 8px; height: 24px; }
+
+  /* Overlay de lancement (le futur point de branchement Moonlight) */
+  #launch {
+    position: fixed; inset: 0; z-index: 10; display: none;
+    place-items: center; background: rgba(5,5,10,.86); backdrop-filter: blur(8px);
+    flex-direction: column; gap: 26px;
+  }
+  #launch.show { display: grid; }
+  #launch .spinner {
+    width: 62px; height: 62px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.12); border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #launch .txt { font-size: 20px; font-weight: 700; }
+  #launch .sub { color: var(--muted); font-size: 14px; margin-top: -14px; }
+
+  .hint-tap { position: fixed; bottom: 70px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 13px; opacity: .7; }
+</style>
+</head>
+<body>
+  <div id="ambient"></div>
+
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="mark"></div>
+        <h1>NO<span>VA</span></h1>
+      </div>
+      <div class="status">
+        <div class="pill"><span class="dot"></span> Hôte connecté</div>
+        <div class="pill" id="clock">--:--</div>
+      </div>
+    </header>
+
+    <div class="hero" id="hero">
+      <div class="cat" id="hero-cat"></div>
+      <h2 id="hero-title"></h2>
+      <p id="hero-desc"></p>
+    </div>
+
+    <div class="rail-wrap">
+      <div class="rail" id="rail"></div>
+    </div>
+
+    <footer>
+      <div class="key"><span class="btn-glyph g-a">A</span> Lancer</div>
+      <div class="key"><span class="btn-glyph g-b">B</span> Retour</div>
+      <div class="key"><span class="btn-glyph g-lr">◀ ▶</span> Naviguer</div>
+    </footer>
+  </div>
+
+  <div class="hint-tap">Manette, flèches clavier, ou glissé du doigt</div>
+
+  <div id="launch">
+    <div class="spinner"></div>
+    <div class="txt" id="launch-txt">Lancement…</div>
+    <div class="sub">Ici se branchera la session Moonlight</div>
+  </div>
+
+<script>
+  // ---- Bibliothèque de jeux (placeholder — remplaçable par tes vraies jaquettes) ----
+  const GAMES = [
+    { title: "Baldur's Gate 3",   cat: "RPG",        emoji: "🐉", desc: "Ton objectif principal. Se tartiner du BG3 dans le plus grand des calmes.", glow: "#c0392b", glow2: "#7b241c" },
+    { title: "Elden Ring",        cat: "Action-RPG", emoji: "⚔️", desc: "Les Terres Intermédiaires t'attendent.",                                    glow: "#c8a24a", glow2: "#6e5a1f" },
+    { title: "Hades II",          cat: "Rogue-lite", emoji: "🔥", desc: "Remonter des Enfers, encore et encore.",                                    glow: "#7a4bd6", glow2: "#3d2a6b" },
+    { title: "Hollow Knight",     cat: "Metroidvania", emoji: "🗡️", desc: "Descends dans les profondeurs d'Hallownest.",                            glow: "#2e86c1", glow2: "#1a4a6b" },
+    { title: "Stardew Valley",    cat: "Cosy",       emoji: "🌱", desc: "La ferme tranquille, l'anti-stress absolu.",                                glow: "#3ddc84", glow2: "#1e7a4a" },
+    { title: "Cyberpunk 2077",    cat: "Open World", emoji: "🌆", desc: "Night City, en streaming, dans ta poche.",                                  glow: "#f1c40f", glow2: "#b8901a" },
+    { title: "Bureau (Desktop)",  cat: "Système",    emoji: "🖥️", desc: "Streame le bureau complet de l'hôte.",                                     glow: "#6c8cff", glow2: "#b06cff" },
+  ];
+
+  const rail = document.getElementById('rail');
+  const ambient = document.getElementById('ambient');
+  const hero = document.getElementById('hero');
+  let index = 0;
+
+  GAMES.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.background = `linear-gradient(160deg, ${g.glow}, ${g.glow2})`;
+    card.innerHTML = `
+      <div class="cover"><div class="emoji">${g.emoji}</div></div>
+      <div class="label">${g.title}</div>`;
+    card.addEventListener('click', () => { index === i ? launch() : select(i); });
+    rail.appendChild(card);
+  });
+  const cards = [...rail.children];
+
+  function select(i) {
+    index = Math.max(0, Math.min(GAMES.length - 1, i));
+    const g = GAMES[index];
+    cards.forEach((c, k) => c.classList.toggle('active', k === index));
+
+    // Centre la carte active
+    const card = cards[index];
+    const railRect = rail.parentElement.getBoundingClientRect();
+    const offset = card.offsetLeft + card.offsetWidth / 2 - railRect.width / 2;
+    rail.style.transform = `translateX(${-offset}px)`;
+
+    // Fond ambiant + hero
+    document.documentElement.style.setProperty('--glow', g.glow);
+    document.documentElement.style.setProperty('--glow2', g.glow2);
+    ambient.style.setProperty('--glow', g.glow);
+    ambient.style.setProperty('--glow2', g.glow2);
+
+    hero.classList.remove('show');
+    void hero.offsetWidth; // reflow pour rejouer l'anim
+    document.getElementById('hero-cat').textContent = g.cat;
+    document.getElementById('hero-title').textContent = g.title;
+    document.getElementById('hero-desc').textContent = g.desc;
+    hero.classList.add('show');
+  }
+
+  // ---- POINT DE BRANCHEMENT : ici viendra le lancement réel de Moonlight ----
+  function launch() {
+    const g = GAMES[index];
+    const overlay = document.getElementById('launch');
+    document.getElementById('launch-txt').textContent = `Lancement de ${g.title}…`;
+    overlay.classList.add('show');
+    // Stub : pour l'instant on simule. À terme -> deep link / intent Moonlight.
+    setTimeout(() => overlay.classList.remove('show'), 2200);
+  }
+
+  // ---- Entrées : clavier ----
+  addEventListener('keydown', e => {
+    if (document.getElementById('launch').classList.contains('show')) {
+      if (e.key === 'Escape' || e.key === 'Backspace') document.getElementById('launch').classList.remove('show');
+      return;
+    }
+    if (e.key === 'ArrowRight') select(index + 1);
+    else if (e.key === 'ArrowLeft') select(index - 1);
+    else if (e.key === 'Enter' || e.key === ' ') launch();
+  });
+
+  // ---- Entrées : tactile (swipe) ----
+  let touchX = null;
+  addEventListener('touchstart', e => touchX = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 45) select(index + (dx < 0 ? 1 : -1));
+    touchX = null;
+  }, { passive: true });
+
+  // ---- Entrées : manette (Gamepad API) ----
+  let padPrev = {};
+  function pollPad() {
+    const pads = navigator.getGamepads?.() || [];
+    for (const p of pads) {
+      if (!p) continue;
+      const ax = p.axes[0] || 0;
+      const right = p.buttons[15]?.pressed || ax > .5;
+      const left  = p.buttons[14]?.pressed || ax < -.5;
+      const a     = p.buttons[0]?.pressed;
+      const b     = p.buttons[1]?.pressed;
+      if (right && !padPrev.right) select(index + 1);
+      if (left && !padPrev.left) select(index - 1);
+      if (a && !padPrev.a) {
+        const o = document.getElementById('launch');
+        o.classList.contains('show') ? null : launch();
+      }
+      if (b && !padPrev.b) document.getElementById('launch').classList.remove('show');
+      padPrev = { right, left, a, b };
+    }
+    requestAnimationFrame(pollPad);
+  }
+  requestAnimationFrame(pollPad);
+
+  // ---- Horloge ----
+  function tick() {
+    const d = new Date();
+    document.getElementById('clock').textContent =
+      d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 10000);
+
+  // Init
+  addEventListener('resize', () => select(index));
+  select(0);
+</script>
+</body>
+</html>
