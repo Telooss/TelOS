@@ -45,13 +45,52 @@ body {
   background-size: cover; background-position: center;
   transition: opacity .18s steps(3);
 }
-/* Voile en APLAT (pas un dégradé) pour que le texte tienne par-dessus l'art */
-.wall-veil { position: absolute; inset: 0; background: var(--concrete-900); opacity: .78; }
+/* Voile en APLAT (pas un dégradé) pour que le texte tienne par-dessus l'art.
+   À .78 l'art était éteint et le haut de l'écran devenait un gris mort ;
+   on le laisse respirer, le titre reste lisible grâce à sa graisse. */
+.wall-veil { position: absolute; inset: 0; background: var(--concrete-900); opacity: .6; }
+
+/* --- La matière ---
+   Tout est STATIQUE : l'encodeur H.265 la range dans sa frame de référence
+   une fois et n'y revient plus. Du bruit qui bouge, lui, mangerait le
+   bitrate destiné au jeu. */
 .halftone {
   position: absolute; inset: 0; pointer-events: none;
   background-image: radial-gradient(var(--concrete-700) 1px, transparent 1px);
   background-size: 4px 4px;
   opacity: .25;
+}
+/* Grain de béton — bruit fractal figé, en SVG inline (aucun fichier à charger).
+   Rastérisé UNE fois par le navigateur puis répété en tuile : le coût est
+   payé au premier rendu, pas à chaque frame. */
+.grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* Scanline — très légère, sinon on tombe dans le CRT de pastiche */
+.scan {
+  position: absolute; inset: 0; pointer-events: none; opacity: .35;
+  background-image: repeating-linear-gradient(
+    0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px
+  );
+}
+
+/* --- Le tag bombé ---
+   Première tentative ratée : un sticker et du scotch qui flottaient sans être
+   collés à rien, et un pochoir planqué derrière les cartes. "Fait main" veut
+   dire POSÉ SUR quelque chose — pas des objets qui lévitent. Supprimés.
+   Il reste UN tag, assumé, dans la zone où le mur respire. */
+.tags { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+.stencil {
+  position: absolute; right: 46px; top: 44%;
+  font-family: 'Oxanium', sans-serif; font-weight: 800;
+  font-size: clamp(90px, 11vw, 190px); line-height: .8;
+  letter-spacing: -6px;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--spray-cyan);
+  opacity: .1;
+  transform: rotate(-5deg);
 }
 
 .ui {
@@ -78,8 +117,11 @@ body {
 }
 
 /* --- Le jeu sélectionné --- */
-/* Loi n°1 : le jeu sélectionné est le plus gros objet à l'écran. */
-.hero { align-self: center; max-width: 66%; }
+/* Loi n°1 : le jeu sélectionné est le plus gros objet à l'écran.
+   Le titre est calé EN BAS de sa rangée, juste au-dessus du rail (leçon PS5) :
+   centré, il laissait un trou mort de 250 px qui grandissait avec la fenêtre.
+   L'espace libre remonte donc en haut, où il est rempli par l'art du jeu. */
+.hero { align-self: end; max-width: 66%; padding-bottom: 8px; }
 .kicker {
   font-family: var(--mono); font-size: 13px; letter-spacing: 4px;
   color: var(--spray-cyan); margin-bottom: 14px; min-height: 16px;

@@ -45,7 +45,12 @@
   <!-- Le mur : l'art du jeu sélectionné, plein cadre. Aplat par-dessus, jamais de dégradé. -->
   <div class="wall" id="wall"></div>
   <div class="wall-veil"></div>
+
+  <!-- La matière : béton, trame, scanline. Statique — donc ~gratuit en H.265,
+       l'encodeur ne la ré-encode pas entre deux frames. -->
   <div class="halftone" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="scan" aria-hidden="true"></div>
 
   <div class="ui">
 
@@ -79,6 +84,12 @@
       <span class="hint"><kbd>◀ ▶</kbd> Parcourir</span>
       <span class="hint"><kbd>Y</kbd> Bibliothèque</span>
     </footer>
+  </div>
+
+  <!-- Le tag bombé : purement décoratif, jamais dans le chemin de la nav.
+       Le chaos en surface, la rigueur en dessous. -->
+  <div class="tags" aria-hidden="true">
+    <div class="stencil">telOS</div>
   </div>
 
   <!-- L'INTRUSION : le seul endroit où la fiction vit -->
