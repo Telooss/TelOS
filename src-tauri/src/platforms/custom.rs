@@ -39,6 +39,13 @@ struct CustomEntry {
 fn config_dir() -> Option<PathBuf> {
     // %APPDATA%/telOS — pas dans le dossier d'install : sur une install
     // Program Files, ce dossier n'est pas garanti inscriptible.
+    //
+    // ⚠️ PIÈGE : la variable $APPDATA de tauri.conf.json (assetProtocol.scope)
+    // n'est PAS %APPDATA% brut — elle inclut l'identifiant du bundle
+    // ($APPDATA -> .../Roaming/com.telooss.telos/). Notre dossier "telOS" ici
+    // ne correspond donc à rien dans $APPDATA/**. C'est pour ça qu'il y a
+    // aussi une entrée $HOME/AppData/Roaming/telOS/** explicite dans le scope.
+    // Si ce nom de dossier change un jour, mettre à jour tauri.conf.json aussi.
     dirs_appdata().map(|p| p.join("telOS"))
 }
 

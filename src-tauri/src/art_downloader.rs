@@ -26,6 +26,11 @@ static DOWNLOADING: AtomicBool = AtomicBool::new(false);
 // ---------------------------------------------------------------------------
 
 /// Racine du cache : %APPDATA%/telOS/cache/
+///
+/// ⚠️ Doit rester en phase avec platforms/custom.rs::config_dir() ET avec
+/// tauri.conf.json (assetProtocol.scope) — voir le commentaire là-bas.
+/// Servi au renderer via convertFileSrc(), donc le dossier réel doit être
+/// couvert par le scope, pas seulement par $APPDATA (qui pointe ailleurs).
 fn cache_root() -> Option<PathBuf> {
     std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("telOS").join("cache"))
 }

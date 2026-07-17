@@ -1,4 +1,5 @@
 {
-  "_comment": "Copier en config.local.json (gitignoré) et renseigner la vraie clé. Jamais commité.",
-  "steamgriddb_api_key": "obtenir sur https://www.steamgriddb.com/profile/preferences/api"
+  "_comment": "Copier en config.local.json (gitignoré) et renseigner les vraies clés. Jamais commité.",
+  "steamgriddb_api_key": "obtenir sur https://www.steamgriddb.com/profile/preferences/api",
+  "rawg_api_key": "obtenir sur https://rawg.io/apidocs"
 }
