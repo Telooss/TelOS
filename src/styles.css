@@ -25,6 +25,7 @@
   --spray-magenta: #FF2D7E;
   --spray-yellow: #FFE93D;
   --signal-green: #6BFF4D;
+  --signal-red: #FF3B30; /* manquait — kbd.kq (ÉCHAP) l'utilisait déjà sans fond */
   --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
 
@@ -219,3 +220,75 @@ kbd.kq { background: var(--signal-red); color: var(--ink); }
   margin-top: 22px; opacity: 0; letter-spacing: 2px;
 }
 .grant.on { opacity: 1; }
+
+/* --- Bouton + : modale d'ajout ---
+   Surface FONCTIONNELLE, pas décorative : contrairement au tag bombé, elle
+   reste rigoureuse et alignée. "Chaos en surface, rigueur en dessous" —
+   un formulaire, c'est la rigueur, pas la surface. */
+.modal {
+  position: absolute; inset: 0; z-index: 20; display: none;
+  place-items: center;
+  background: rgba(22, 22, 26, .85); /* scrim en aplat, jamais de blur */
+}
+.modal.on { display: grid; }
+.modal-box {
+  width: 460px; max-width: calc(100vw - 88px);
+  background: var(--concrete-800);
+  border: 2px solid var(--concrete-700);
+  padding: 28px;
+}
+.modal-title {
+  font-weight: 800; font-size: 20px; letter-spacing: 2px;
+  margin-bottom: 22px; color: var(--ink);
+}
+.field {
+  display: flex; flex-direction: column; gap: 7px;
+  margin-bottom: 16px;
+}
+.field > span {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.field input[type="text"] {
+  background: var(--concrete-900); color: var(--ink);
+  border: 2px solid var(--concrete-700);
+  font-family: 'Oxanium', sans-serif; font-size: 15px;
+  padding: 9px 11px; outline: none;
+}
+.field input[type="text"]:focus { border-color: var(--spray-cyan); }
+.pick {
+  align-self: flex-start;
+  background: var(--concrete-700); color: var(--ink);
+  border: none; font-family: var(--mono); font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 14px; cursor: pointer;
+}
+.pick:hover, .pick:focus-visible { outline: 2px solid var(--spray-cyan); outline-offset: -2px; }
+.picked {
+  font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+  margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.modal-error {
+  font-family: var(--mono); font-size: 12px; color: var(--signal-red);
+  min-height: 16px; margin-bottom: 8px;
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 6px; }
+.btn {
+  border: none; font-family: 'Oxanium', sans-serif; font-weight: 700;
+  font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 11px 22px; cursor: pointer;
+}
+.btn-ghost { background: var(--concrete-700); color: var(--ink); }
+.btn-go { background: var(--spray-cyan); color: var(--concrete-900); }
+.btn-go:disabled { background: var(--concrete-700); color: var(--ink-dim); cursor: not-allowed; }
+
+/* --- Tuile + du rail --- */
+.card.add {
+  display: flex; align-items: center; justify-content: center;
+  border-style: dashed; background: transparent;
+}
+.card.add .plus {
+  font-family: 'Oxanium', sans-serif; font-weight: 300; font-size: 56px;
+  color: var(--ink-dim); line-height: 1;
+}
+.card.add.sel .plus { color: var(--spray-cyan); }

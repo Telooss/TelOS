@@ -50,6 +50,24 @@ async function apiQuit() {
   if (invoke) return invoke('quit_app');
 }
 
+// Le sélecteur de fichiers natif n'existe pas en navigateur (dev-server.js) :
+// on échoue clairement plutôt que de laisser le bouton ne rien faire.
+async function apiPickExecutable() {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Sélecteur de fichiers indisponible hors app native');
+  return invoke('pick_executable');
+}
+async function apiPickOptionalFile() {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Sélecteur de fichiers indisponible hors app native');
+  return invoke('pick_optional_file');
+}
+async function apiAddCustomGame(name, platform, execPath, args) {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Ajout indisponible hors app native');
+  return invoke('add_custom_game', { name, platform, execPath, args });
+}
+
 /**
  * L'IPC ne transporte que des CHEMINS, jamais des octets (voir get_games
  * côté Rust). En Tauri, un chemin disque brut doit passer par convertFileSrc
@@ -103,13 +121,10 @@ async function boot() {
   games = data.games;
   document.getElementById('count').textContent = games.length;
 
-  if (!games.length) {
-    document.getElementById('title').textContent = 'AUCUN JEU INSTALLÉ';
-    return;
-  }
-
+  // render()/select() gèrent déjà une bibliothèque vide (la tuile + reste
+  // sélectionnable) : pas de cas particulier à traiter ici.
   render();
-  select(0);
+  select(Math.min(index, games.length));
 }
 
 function render() {
@@ -127,13 +142,23 @@ function render() {
     li.addEventListener('click', () => (i === index ? launch() : select(i)));
     rail.appendChild(li);
   }
+
+  // La tuile + : jamais dans `games`, se comporte comme une carte de plus
+  // (sélectionner puis activer) mais ouvre la modale au lieu de lancer.
+  const addTile = document.createElement('li');
+  addTile.className = 'card add';
+  addTile.innerHTML = '<span class="plus">+</span>';
+  addTile.addEventListener('click', () => (index === games.length ? launch() : select(games.length)));
+  rail.appendChild(addTile);
 }
 
 let railX = 0;
 
 function select(i) {
-  index = Math.max(0, Math.min(games.length - 1, i));
-  const g = games[index];
+  // games.length est une position valide : c'est la tuile +, toujours en
+  // dernier, jamais un jeu.
+  index = Math.max(0, Math.min(games.length, i));
+  const onAddTile = index === games.length;
 
   [...rail.children].forEach((c, k) => c.classList.toggle('sel', k === index));
 
@@ -148,6 +173,16 @@ function select(i) {
   if (right + railX > vpW - M) railX = vpW - M - right;
   railX = Math.min(0, railX);
   rail.style.transform = `translateX(${railX}px)`;
+
+  if (onAddTile) {
+    wall.style.backgroundImage = 'none';
+    document.getElementById('kicker').textContent = 'BIBLIOTHÈQUE';
+    document.getElementById('title').textContent = 'AJOUTER UN JEU';
+    document.getElementById('meta').textContent = '.EXE HORS STEAM · ÉMULATEUR + ROM';
+    return;
+  }
+
+  const g = games[index];
 
   // Le mur prend l'art du jeu — repli sur la jaquette si pas de hero,
   // sinon l'écran devient un trou noir mort.
@@ -166,6 +201,7 @@ function select(i) {
 const LINES = ['> ouverture du lien...', '> contournement...', '> injection charge utile'];
 
 function launch() {
+  if (index === games.length) { openAddModal(); return; }
   const g = games[index];
   const overlay = document.getElementById('intrusion');
   const log = document.getElementById('log');
@@ -189,8 +225,108 @@ function launch() {
   setTimeout(() => overlay.classList.remove('on'), 1600);
 }
 
+// --- Bouton + : modale d'ajout (aucun réseau, aucun compte requis) ---
+const modal = document.getElementById('add-modal');
+const elName = document.getElementById('add-name');
+const elPlatform = document.getElementById('add-platform');
+const elExecBtn = document.getElementById('add-exec-btn');
+const elExecPath = document.getElementById('add-exec-path');
+const elArgBtn = document.getElementById('add-arg-btn');
+const elArgPath = document.getElementById('add-arg-path');
+const elError = document.getElementById('add-error');
+const elCancel = document.getElementById('add-cancel');
+const elSubmit = document.getElementById('add-submit');
+
+// Tant que la modale est ouverte, TOUS les raccourcis globaux (nav du rail,
+// A, F11, Échap-quitte) sont coupés — sinon une pression de manette derrière
+// la modale relance un jeu ou ferme telOS pendant qu'on remplit un formulaire.
+let modalOpen = false;
+
+function updateSubmitState() {
+  elSubmit.disabled = !(elName.value.trim() && pickedExec);
+}
+
+/** Dérive un nom lisible depuis un chemin : dossier retiré, extension retirée. */
+function nameFromPath(p) {
+  const base = p.split(/[\\/]/).pop() || p;
+  return base.replace(/\.[^.]+$/, '');
+}
+
+let pickedExec = null;
+let pickedArg = null;
+
+function openAddModal() {
+  modalOpen = true;
+  elName.value = '';
+  elPlatform.value = '';
+  pickedExec = null;
+  pickedArg = null;
+  elExecPath.textContent = '— aucun —';
+  elArgPath.textContent = '— aucun —';
+  elError.textContent = '';
+  updateSubmitState();
+  modal.classList.add('on');
+  elName.focus();
+}
+
+function closeAddModal() {
+  modalOpen = false;
+  modal.classList.remove('on');
+}
+
+elExecBtn.addEventListener('click', async () => {
+  try {
+    const path = await apiPickExecutable();
+    if (!path) return; // annulé dans le sélecteur natif
+    pickedExec = path;
+    elExecPath.textContent = path;
+    if (!elName.value.trim()) elName.value = nameFromPath(path);
+    updateSubmitState();
+  } catch (e) {
+    elError.textContent = String(e.message || e);
+  }
+});
+
+elArgBtn.addEventListener('click', async () => {
+  try {
+    const path = await apiPickOptionalFile();
+    if (!path) return;
+    pickedArg = path;
+    elArgPath.textContent = path;
+  } catch (e) {
+    elError.textContent = String(e.message || e);
+  }
+});
+
+elName.addEventListener('input', updateSubmitState);
+elCancel.addEventListener('click', closeAddModal);
+
+elSubmit.addEventListener('click', async () => {
+  elError.textContent = '';
+  try {
+    const id = await apiAddCustomGame(
+      elName.value.trim(),
+      elPlatform.value.trim() || 'PC',
+      pickedExec,
+      pickedArg ? [pickedArg] : []
+    );
+    closeAddModal();
+    await boot();
+    select(Math.max(0, games.findIndex(g => g.id === id)));
+  } catch (e) {
+    elError.textContent = String(e.message || e);
+  }
+});
+
 // --- Entrées : clavier, manette, tactile ---
 addEventListener('keydown', e => {
+  if (modalOpen) {
+    // Un <input type="text"> gère déjà la saisie et Tab nativement — on ne
+    // touche à rien d'autre pour ne pas casser ça. Seule Échap est à nous :
+    // elle doit fermer la modale, pas quitter telOS.
+    if (e.key === 'Escape') { e.preventDefault(); closeAddModal(); }
+    return;
+  }
   // La répétition auto de l'OS fait défiler la sélection en rafale et rend la
   // nav imprévisible : on n'accepte que des pressions discrètes.
   if (e.repeat) return;
@@ -210,10 +346,15 @@ let padPrev = {};
     const right = p.buttons[15]?.pressed || ax > 0.5;
     const left = p.buttons[14]?.pressed || ax < -0.5;
     const a = p.buttons[0]?.pressed;
-    if (right && !padPrev.right) select(index + 1);
-    if (left && !padPrev.left) select(index - 1);
-    if (a && !padPrev.a) launch();
-    padPrev = { right, left, a };
+    const b = p.buttons[1]?.pressed;
+    if (modalOpen) {
+      if (b && !padPrev.b) closeAddModal(); // B annule, comme partout ailleurs
+    } else {
+      if (right && !padPrev.right) select(index + 1);
+      if (left && !padPrev.left) select(index - 1);
+      if (a && !padPrev.a) launch();
+    }
+    padPrev = { right, left, a, b };
   }
   requestAnimationFrame(pollPad);
 })();
@@ -221,7 +362,7 @@ let padPrev = {};
 let touchX = null;
 addEventListener('touchstart', e => (touchX = e.touches[0].clientX), { passive: true });
 addEventListener('touchend', e => {
-  if (touchX === null) return;
+  if (touchX === null || modalOpen) { touchX = null; return; }
   const dx = e.changedTouches[0].clientX - touchX;
   if (Math.abs(dx) > 45) select(index + (dx < 0 ? 1 : -1));
   touchX = null;
@@ -234,7 +375,9 @@ addEventListener('touchend', e => {
   setTimeout(tick, 10000);
 })();
 
-addEventListener('resize', () => games.length && select(index));
+// select() gère seul le cas 0 jeu (la tuile + reste toujours positionnable) —
+// plus besoin de conditionner sur games.length.
+addEventListener('resize', () => select(index));
 
 // Aucune erreur ne doit pouvoir passer inaperçue et laisser l'écran figé.
 boot().catch(fail);

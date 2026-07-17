@@ -3,7 +3,9 @@ mod platforms;
 mod vdf;
 
 use library::{Game, Launch};
+use platforms::custom;
 use std::sync::Mutex;
+use tauri_plugin_dialog::DialogExt;
 
 /// La bibliothèque scannée vit ici entre deux appels du renderer.
 /// C'est ce qui permet à launch_game() de ne JAMAIS faire confiance à une
@@ -32,6 +34,52 @@ fn get_games(state: tauri::State<AppState>) -> library::ScanResult {
     result
 }
 
+/// Ouvre le sélecteur natif pour choisir un exécutable. Bloquant : un
+/// tauri::command tourne déjà hors du thread UI, donc attendre le choix de
+/// l'utilisateur ici ne gèle rien côté rendu.
+#[tauri::command]
+fn pick_executable(app: tauri::AppHandle) -> Option<String> {
+    app.dialog()
+        .file()
+        .set_title("Choisir un exécutable")
+        .add_filter("Exécutable", &["exe"])
+        .blocking_pick_file()
+        .map(|f| f.to_string())
+}
+
+/// Même mécanisme, sans filtre d'extension : le fichier optionnel passé en
+/// argument (typiquement une ROM) n'a pas un format prévisible.
+#[tauri::command]
+fn pick_optional_file(app: tauri::AppHandle) -> Option<String> {
+    app.dialog().file().set_title("Choisir un fichier (optionnel)").blocking_pick_file().map(|f| f.to_string())
+}
+
+/// Ajoute un jeu à la bibliothèque locale. Le chemin est revalidé sur disque
+/// dans custom::add() même s'il vient du sélecteur natif : défense en
+/// profondeur, jamais confiance aveugle en une chaîne venue du renderer.
+/// Renvoie l'id du jeu créé — le renderer en a besoin pour le sélectionner
+/// tout de suite après l'ajout, sans avoir à deviner sa position dans le rail.
+#[tauri::command]
+fn add_custom_game(
+    name: String,
+    platform: String,
+    exec_path: String,
+    args: Vec<String>,
+    state: tauri::State<AppState>,
+) -> Result<String, String> {
+    let game = custom::add(name, platform, exec_path, args)?;
+    let id = game.id.clone();
+    state.games.lock().unwrap().push(game);
+    Ok(id)
+}
+
+#[tauri::command]
+fn remove_custom_game(id: String, state: tauri::State<AppState>) -> Result<(), String> {
+    custom::remove(&id)?;
+    state.games.lock().unwrap().retain(|g| g.id != id);
+    Ok(())
+}
+
 /// Bascule plein écran. En sans-bordure, il n'y a plus de croix de fermeture :
 /// cette sortie doit exister AVANT d'activer le mode kiosque, sinon la fenêtre
 /// devient un piège en développement.
@@ -57,7 +105,8 @@ fn launch_game(platform: String, id: String, state: tauri::State<AppState>) -> R
     let game = library::find_game(&games, &platform, &id)
         .ok_or_else(|| "Jeu introuvable dans la bibliothèque scannée.".to_string())?;
 
-    match &game.launch {
+    let id_for_persist = game.id.clone();
+    let result = match &game.launch {
         Launch::Uri(uri) => open::that(uri).map_err(|e| e.to_string()),
         Launch::Exec { path, args } => {
             // spawn() et pas status()/output() : on ne bloque jamais sur la
@@ -68,19 +117,34 @@ fn launch_game(platform: String, id: String, state: tauri::State<AppState>) -> R
                 .map(|_| ())
                 .map_err(|e| e.to_string())
         }
+    };
+
+    // Les jeux Steam tiennent leur lastPlayed de Steam lui-même (le manifeste).
+    // Les jeux ajoutés à la main n'ont que nous — sans ça, un jeu lancé hier
+    // resterait affiché comme "jamais lancé" pour toujours.
+    if result.is_ok() && custom::is_custom_id(&id_for_persist) {
+        drop(games); // relâche le verrou avant que mark_played rouvre le fichier
+        custom::mark_played(&id_for_persist);
     }
+
+    result
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState { games: Mutex::new(Vec::new()) })
         .invoke_handler(tauri::generate_handler![
             get_games,
             launch_game,
             toggle_fullscreen,
-            quit_app
+            quit_app,
+            pick_executable,
+            pick_optional_file,
+            add_custom_game,
+            remove_custom_game
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

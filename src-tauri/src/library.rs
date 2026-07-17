@@ -3,7 +3,7 @@
 //! mais chaque jeu porte déjà sa plateforme d'origine — ajouter un provider
 //! revient à déposer un module dans platforms/ et à l'ajouter à scan_all().
 
-use crate::platforms::steam;
+use crate::platforms::{custom, steam};
 use serde::Serialize;
 
 #[derive(Serialize, Clone, Default)]
@@ -61,41 +61,38 @@ pub struct ScanResult {
     pub platforms: Vec<PlatformStatus>,
 }
 
+/// Fait tourner un provider et range son résultat — factorisé pour ne pas
+/// recopier ce bloc à chaque plateforme ajoutée (Epic, EA, GOG suivront
+/// le même moule).
+fn run_provider(
+    id: &str,
+    name: &str,
+    present: bool,
+    scan: impl FnOnce() -> Result<Vec<Game>, String>,
+    games: &mut Vec<Game>,
+    platforms: &mut Vec<PlatformStatus>,
+) {
+    if !present {
+        platforms.push(PlatformStatus { id: id.into(), name: name.into(), present: false, count: 0, error: None });
+        return;
+    }
+    match scan() {
+        Ok(g) => {
+            platforms.push(PlatformStatus { id: id.into(), name: name.into(), present: true, count: g.len(), error: None });
+            games.extend(g);
+        }
+        Err(e) => platforms.push(PlatformStatus { id: id.into(), name: name.into(), present: true, count: 0, error: Some(e) }),
+    }
+}
+
 /// Un provider en échec est signalé, jamais fatal aux autres :
 /// une bibliothèque partielle vaut mieux qu'un écran vide.
 pub fn scan_all() -> ScanResult {
     let mut games = Vec::new();
     let mut platforms = Vec::new();
 
-    if steam::detect() {
-        match steam::scan() {
-            Ok(g) => {
-                platforms.push(PlatformStatus {
-                    id: steam::ID.into(),
-                    name: steam::NAME.into(),
-                    present: true,
-                    count: g.len(),
-                    error: None,
-                });
-                games.extend(g);
-            }
-            Err(e) => platforms.push(PlatformStatus {
-                id: steam::ID.into(),
-                name: steam::NAME.into(),
-                present: true,
-                count: 0,
-                error: Some(e),
-            }),
-        }
-    } else {
-        platforms.push(PlatformStatus {
-            id: steam::ID.into(),
-            name: steam::NAME.into(),
-            present: false,
-            count: 0,
-            error: None,
-        });
-    }
+    run_provider(steam::ID, steam::NAME, steam::detect(), steam::scan, &mut games, &mut platforms);
+    run_provider(custom::ID, custom::NAME, custom::detect(), custom::scan, &mut games, &mut platforms);
 
     // Tri par récence, toutes plateformes confondues — loi n°4.
     games.sort_by(|a, b| b.last_played.cmp(&a.last_played));

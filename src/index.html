@@ -101,6 +101,43 @@
     <div class="grant" id="grant">ACCÈS ACCORDÉ</div>
   </div>
 
+  <!-- Bouton + : ajouter un jeu à la main (.exe hors Steam, émulateur+ROM).
+       Aucun réseau, aucun compte requis. -->
+  <div class="modal" id="add-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-title">AJOUTER UN JEU</div>
+
+      <label class="field">
+        <span>Nom</span>
+        <input type="text" id="add-name" placeholder="Nom affiché" autocomplete="off" />
+      </label>
+
+      <label class="field">
+        <span>Plateforme</span>
+        <input type="text" id="add-platform" placeholder="PC" autocomplete="off" />
+      </label>
+
+      <div class="field">
+        <span>Exécutable</span>
+        <button type="button" class="pick" id="add-exec-btn">Choisir…</button>
+        <div class="picked" id="add-exec-path">— aucun —</div>
+      </div>
+
+      <div class="field">
+        <span>Argument (ROM, optionnel)</span>
+        <button type="button" class="pick" id="add-arg-btn">Choisir…</button>
+        <div class="picked" id="add-arg-path">— aucun —</div>
+      </div>
+
+      <div class="modal-error" id="add-error"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="add-cancel">Annuler</button>
+        <button type="button" class="btn btn-go" id="add-submit" disabled>Ajouter</button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script src="app.js"></script>
