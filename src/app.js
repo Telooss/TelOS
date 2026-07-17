@@ -50,6 +50,19 @@ async function apiQuit() {
   if (invoke) return invoke('quit_app');
 }
 
+/**
+ * L'IPC ne transporte que des CHEMINS, jamais des octets (voir get_games
+ * côté Rust). En Tauri, un chemin disque brut doit passer par convertFileSrc
+ * pour devenir une URL chargeable par le WebView — celui-ci lit le fichier
+ * lui-même, à la demande, sans repasser par le pont IPC.
+ * En navigateur, dev-server.js sert déjà une URL HTTP utilisable telle quelle.
+ */
+function resolveArt(path) {
+  if (!path) return null;
+  const convert = window.__TAURI__?.core?.convertFileSrc;
+  return convert ? convert(path) : path;
+}
+
 // Affichage de la plateforme — un seul endroit, valable pour les deux sources.
 const PLATFORMS = {
   steam: { name: 'Steam', badge: 'STEAM' },
@@ -105,8 +118,9 @@ function render() {
     const li = document.createElement('li');
     li.className = 'card';
     // Pas de jaquette en cache -> une affiche dans notre système, pas un trou gris
-    const cover = g.art.portrait
-      ? `<img src="${g.art.portrait}" alt="" loading="lazy">`
+    const src = resolveArt(g.art.portrait);
+    const cover = src
+      ? `<img src="${src}" alt="" loading="lazy">`
       : `<div class="fallback">${g.name}</div>`;
     // La plateforme d'origine est toujours visible — jamais implicite.
     li.innerHTML = cover + `<span class="badge">${platBadge(g.platform)}</span>`;
@@ -137,8 +151,10 @@ function select(i) {
 
   // Le mur prend l'art du jeu — repli sur la jaquette si pas de hero,
   // sinon l'écran devient un trou noir mort.
-  const bg = g.art.hero || g.art.portrait;
-  wall.style.backgroundImage = bg ? `url(${bg})` : 'none';
+  // Guillemets obligatoires : un chemin Windows non échappé dans url(...)
+  // casse dès qu'il contient une parenthèse ("Program Files (x86)").
+  const bg = resolveArt(g.art.hero || g.art.portrait);
+  wall.style.backgroundImage = bg ? `url("${bg}")` : 'none';
 
   document.getElementById('kicker').textContent =
     `${platName(g.platform).toUpperCase()}  ·  ${g.lastPlayed ? 'CONTINUER' : 'JOUER'}`;

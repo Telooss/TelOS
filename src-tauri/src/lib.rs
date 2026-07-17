@@ -2,7 +2,7 @@ mod library;
 mod platforms;
 mod vdf;
 
-use library::Game;
+use library::{Game, Launch};
 use std::sync::Mutex;
 
 /// La bibliothèque scannée vit ici entre deux appels du renderer.
@@ -12,53 +12,24 @@ struct AppState {
     games: Mutex<Vec<Game>>,
 }
 
-/// Un chemin disque brut -> data URI utilisable directement en `<img src>`.
-/// Premier jet volontairement simple — à remplacer par le protocole
-/// d'assets natif de Tauri une fois la tranche verticale validée.
-fn encode_art(path: &str) -> Option<String> {
-    let bytes = std::fs::read(path).ok()?;
-    let mime = if path.to_lowercase().ends_with(".png") { "image/png" } else { "image/jpeg" };
-    use base64::Engine;
-    Some(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
-}
-
+/// L'IPC transporte des CHEMINS, jamais des octets. Le renderer convertit
+/// chaque chemin en URL via convertFileSrc() (protocole d'assets natif de
+/// Tauri) et le WebView charge l'image lui-même, depuis le disque, à la
+/// demande — zéro copie à travers le pont IPC.
+///
+/// Avant : chaque jaquette était lue et encodée en base64 ICI, pour un
+/// payload mesuré à 5.3 Mo sur 8 jeux. Ça grossit linéairement avec la
+/// bibliothèque ; à l'échelle d'une logithèque d'émulation (~200 titres)
+/// ça devenait ~130 Mo par appel. Le payload est désormais constant,
+/// quel que soit le nombre de jeux.
 #[tauri::command]
 fn get_games(state: tauri::State<AppState>) -> library::ScanResult {
     let t0 = std::time::Instant::now();
     let result = library::scan_all();
     eprintln!("[telos] scan_all : {} jeux en {:?}", result.games.len(), t0.elapsed());
 
-    // L'état garde les CHEMINS bruts (utile pour plus tard), mais le renderer
-    // reçoit déjà des data URI prêtes à afficher — pas de deuxième aller-retour par image.
     *state.games.lock().unwrap() = result.games.clone();
-
-    let t1 = std::time::Instant::now();
-    let games: Vec<Game> = result
-        .games
-        .into_iter()
-        .map(|mut g| {
-            g.art.portrait = g.art.portrait.as_deref().and_then(encode_art);
-            g.art.hero = g.art.hero.as_deref().and_then(encode_art);
-            g.art.logo = g.art.logo.as_deref().and_then(encode_art);
-            g
-        })
-        .collect();
-
-    let payload: usize = games
-        .iter()
-        .map(|g| {
-            g.art.portrait.as_ref().map_or(0, |s| s.len())
-                + g.art.hero.as_ref().map_or(0, |s| s.len())
-                + g.art.logo.as_ref().map_or(0, |s| s.len())
-        })
-        .sum();
-    eprintln!(
-        "[telos] encodage jaquettes : {:?} — payload {:.1} Mo",
-        t1.elapsed(),
-        payload as f64 / 1e6
-    );
-
-    library::ScanResult { games, platforms: result.platforms }
+    result
 }
 
 /// Bascule plein écran. En sans-bordure, il n'y a plus de croix de fermeture :
@@ -77,14 +48,27 @@ fn quit_app(app: tauri::AppHandle) {
 }
 
 /// Lance un jeu — mais UNIQUEMENT un jeu que NOTRE scan a trouvé.
-/// Le renderer envoie (platform, id), jamais un chemin ni une URI :
-/// c'est le cœur natif qui décide de ce qui est exécutable.
+/// Le renderer envoie (platform, id), jamais un chemin, une URI ni des
+/// arguments : c'est le cœur natif qui décide de ce qui est exécutable,
+/// à partir de SA propre bibliothèque scannée.
 #[tauri::command]
 fn launch_game(platform: String, id: String, state: tauri::State<AppState>) -> Result<(), String> {
     let games = state.games.lock().unwrap();
     let game = library::find_game(&games, &platform, &id)
         .ok_or_else(|| "Jeu introuvable dans la bibliothèque scannée.".to_string())?;
-    open::that(&game.launch).map_err(|e| e.to_string())
+
+    match &game.launch {
+        Launch::Uri(uri) => open::that(uri).map_err(|e| e.to_string()),
+        Launch::Exec { path, args } => {
+            // spawn() et pas status()/output() : on ne bloque jamais sur la
+            // durée d'une partie, et fermer telOS ne doit pas tuer le jeu.
+            std::process::Command::new(path)
+                .args(args)
+                .spawn()
+                .map(|_| ())
+                .map_err(|e| e.to_string())
+        }
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

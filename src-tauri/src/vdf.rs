@@ -23,9 +23,6 @@ impl Value {
             _ => None,
         }
     }
-    pub fn get(&self, key: &str) -> Option<&Value> {
-        self.as_map()?.get(key)
-    }
 }
 
 fn read_quoted(chars: &[char], i: &mut usize) -> String {

@@ -13,12 +13,32 @@ pub struct Art {
     pub logo: Option<String>,
 }
 
+/// Comment démarrer un jeu — deux mécaniques, pas une.
+///
+/// `Uri` : un protocole résolu par l'OS (steam://, uplay://, origin2://…).
+/// `Exec` : un exécutable lancé directement avec ses arguments — le cas des
+/// émulateurs (`pcsx2.exe "rom.chd"`) et des .exe ajoutés à la main via le
+/// bouton +. Poser les deux formes maintenant évite de refaire ce refactor
+/// à travers tout le code quand l'émulation ou le bouton + arriveront.
+#[derive(Clone, Debug)]
+pub enum Launch {
+    Uri(String),
+    // Pas encore construite : arrive avec le bouton + et l'émulation
+    // (chantiers suivants). Posée maintenant pour que launch_game() gère
+    // déjà les deux mécaniques sans refactor à venir.
+    #[allow(dead_code)]
+    Exec { path: String, args: Vec<String> },
+}
+
 #[derive(Serialize, Clone)]
 pub struct Game {
     pub platform: String,
     pub id: String,
     pub name: String,
-    pub launch: String,
+    // Jamais envoyé au renderer : exposition minimale, et de toute façon
+    // inutile côté client — c'est launch_game() qui l'exécute, côté natif.
+    #[serde(skip)]
+    pub launch: Launch,
     #[serde(rename = "sizeBytes")]
     pub size_bytes: u64,
     #[serde(rename = "lastPlayed")]

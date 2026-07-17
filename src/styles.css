@@ -29,6 +29,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+.sr-defs { position: absolute; } /* conteneur <defs> du logo, jamais affiché */
 html, body { height: 100%; overflow: hidden; }
 body {
   background: var(--concrete-900);

@@ -190,7 +190,7 @@ fn read_games(steam_root: &Path, library_path: &Path) -> Vec<Game> {
                 platform: ID.to_string(),
                 id: appid.clone(),
                 name,
-                launch: format!("steam://rungameid/{appid}"),
+                launch: crate::library::Launch::Uri(format!("steam://rungameid/{appid}")),
                 size_bytes,
                 last_played,
                 art: find_artwork(steam_root, &appid),
