@@ -12,7 +12,10 @@
       {
         "title": "telOS",
         "width": 1280,
-        "height": 720
+        "height": 720,
+        "fullscreen": true,
+        "decorations": false,
+        "resizable": true
       }
     ],
     "security": {

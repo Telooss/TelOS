@@ -61,6 +61,21 @@ fn get_games(state: tauri::State<AppState>) -> library::ScanResult {
     library::ScanResult { games, platforms: result.platforms }
 }
 
+/// Bascule plein écran. En sans-bordure, il n'y a plus de croix de fermeture :
+/// cette sortie doit exister AVANT d'activer le mode kiosque, sinon la fenêtre
+/// devient un piège en développement.
+#[tauri::command]
+fn toggle_fullscreen(window: tauri::Window) -> Result<bool, String> {
+    let now = window.is_fullscreen().map_err(|e| e.to_string())?;
+    window.set_fullscreen(!now).map_err(|e| e.to_string())?;
+    Ok(!now)
+}
+
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
 /// Lance un jeu — mais UNIQUEMENT un jeu que NOTRE scan a trouvé.
 /// Le renderer envoie (platform, id), jamais un chemin ni une URI :
 /// c'est le cœur natif qui décide de ce qui est exécutable.
@@ -77,7 +92,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState { games: Mutex::new(Vec::new()) })
-        .invoke_handler(tauri::generate_handler![get_games, launch_game])
+        .invoke_handler(tauri::generate_handler![
+            get_games,
+            launch_game,
+            toggle_fullscreen,
+            quit_app
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

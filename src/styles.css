@@ -186,12 +186,15 @@ body {
   letter-spacing: 1px;
 }
 .hint { display: flex; align-items: center; gap: 8px; }
+/* Les sorties sont repoussées à droite : utiles, mais pas au même rang que Jouer */
+.hint.pull { margin-left: auto; }
 kbd {
   font-family: var(--mono); font-size: 11px; font-weight: 700;
   background: var(--concrete-700); color: var(--ink);
   padding: 3px 7px;
 }
 kbd.ka { background: var(--signal-green); color: var(--concrete-900); }
+kbd.kq { background: var(--signal-red); color: var(--ink); }
 
 /* --- L'intrusion : uniquement au lancement --- */
 .intrusion {

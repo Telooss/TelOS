@@ -40,6 +40,16 @@ async function apiLaunch(g) {
   window.location.href = g.launch; // pas de retour possible en navigateur : on quitte la page
 }
 
+async function apiToggleFullscreen() {
+  const invoke = tauriInvoke();
+  if (invoke) return invoke('toggle_fullscreen');
+}
+
+async function apiQuit() {
+  const invoke = tauriInvoke();
+  if (invoke) return invoke('quit_app');
+}
+
 // Affichage de la plateforme — un seul endroit, valable pour les deux sources.
 const PLATFORMS = {
   steam: { name: 'Steam', badge: 'STEAM' },
@@ -171,6 +181,9 @@ addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') select(index + 1);
   else if (e.key === 'ArrowLeft') select(index - 1);
   else if (e.key === 'Enter' || e.key === ' ') launch();
+  // Les deux sorties du mode kiosque : sans bordure, il n'y a plus de croix.
+  else if (e.key === 'F11') apiToggleFullscreen();
+  else if (e.key === 'Escape') apiQuit();
 });
 
 let padPrev = {};
