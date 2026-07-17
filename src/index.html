@@ -92,7 +92,7 @@
       <footer class="sysbar">
         <span class="hint"><kbd class="ka">A</kbd> Jouer</span>
         <span class="hint"><kbd>◀ ▶</kbd> Parcourir</span>
-        <span class="hint"><kbd>Y</kbd> Bibliothèque</span>
+        <span class="hint"><kbd>Y</kbd> Fiche</span>
         <!-- Sans bordure, il n'y a plus de croix native : la sortie doit être visible.
              Échap réduit dans le tray (l'app reste résidente) — le vrai quitter
              vit dans le menu du tray, pas ici. -->
@@ -154,6 +154,62 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" id="add-cancel">Annuler</button>
           <button type="button" class="btn btn-go" id="add-submit" disabled>Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fiche jeu : page plein écran (touche Y). Résumé/développeur/genres
+         récupérés (Steam gratuit, ou RAWG hors Steam), éditables à la main —
+         la correction ne casse jamais un futur rescan (overrides.json côté Rust). -->
+    <div class="page" id="game-page" aria-hidden="true">
+      <div class="page-wall" id="page-wall"></div>
+      <div class="page-veil"></div>
+
+      <button type="button" class="page-back" id="page-back">‹ RETOUR</button>
+
+      <div class="page-content">
+        <div class="page-kicker" id="page-kicker"></div>
+        <h1 class="page-title" id="page-title"></h1>
+        <div class="page-byline" id="page-byline"></div>
+        <p class="page-summary" id="page-summary"></p>
+
+        <div class="page-actions" id="page-actions">
+          <button type="button" class="btn btn-ghost" id="page-edit">Éditer la fiche</button>
+        </div>
+
+        <div class="page-edit-form" id="page-edit-form" hidden>
+          <label class="field">
+            <span>Résumé</span>
+            <textarea id="edit-summary" rows="3"></textarea>
+          </label>
+          <label class="field">
+            <span>Développeur</span>
+            <input type="text" id="edit-developer" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Éditeur</span>
+            <input type="text" id="edit-publisher" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Genres (séparés par des virgules)</span>
+            <input type="text" id="edit-genres" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Date de sortie</span>
+            <input type="text" id="edit-release" autocomplete="off" />
+          </label>
+          <div class="field">
+            <span>Jaquette</span>
+            <button type="button" class="pick" id="edit-portrait-btn">Changer…</button>
+            <div class="picked" id="edit-portrait-path">— garder l'actuelle —</div>
+          </div>
+
+          <div class="modal-error" id="page-error"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="page-cancel">Annuler</button>
+            <button type="button" class="btn btn-go" id="page-save">Enregistrer</button>
+          </div>
         </div>
       </div>
     </div>

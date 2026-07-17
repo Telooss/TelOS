@@ -73,6 +73,24 @@ async function apiAddCustomGame(name, platform, execPath, args) {
   return invoke('add_custom_game', { name, platform, execPath, args });
 }
 
+// Fiche jeu : contrairement aux jaquettes, l'attente réseau ici est normale —
+// ouvrir la fiche est une action délibérée, pas le boot.
+async function apiGetGameInfo(platform, id) {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Fiche jeu indisponible hors app native');
+  return invoke('get_game_info', { platform, id });
+}
+async function apiPickImage() {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Sélecteur de fichiers indisponible hors app native');
+  return invoke('pick_image');
+}
+async function apiSaveGameInfo(platform, id, patch) {
+  const invoke = tauriInvoke();
+  if (!invoke) throw new Error('Enregistrement indisponible hors app native');
+  return invoke('save_game_info', { platform, id, patch });
+}
+
 /**
  * L'IPC ne transporte que des CHEMINS, jamais des octets (voir get_games
  * côté Rust). En Tauri, un chemin disque brut doit passer par convertFileSrc
@@ -370,6 +388,141 @@ elSubmit.addEventListener('click', async () => {
   }
 });
 
+// --- Fiche jeu (touche Y) : info + édition, aucun impact sur le boot ---
+const page = document.getElementById('game-page');
+const pageWall = document.getElementById('page-wall');
+const pageKicker = document.getElementById('page-kicker');
+const pageTitle = document.getElementById('page-title');
+const pageByline = document.getElementById('page-byline');
+const pageSummary = document.getElementById('page-summary');
+const pageActions = document.getElementById('page-actions');
+const pageEditForm = document.getElementById('page-edit-form');
+const pageError = document.getElementById('page-error');
+const pageBack = document.getElementById('page-back');
+const pageEditBtn = document.getElementById('page-edit');
+const pageCancelBtn = document.getElementById('page-cancel');
+const pageSaveBtn = document.getElementById('page-save');
+const editSummary = document.getElementById('edit-summary');
+const editDeveloper = document.getElementById('edit-developer');
+const editPublisher = document.getElementById('edit-publisher');
+const editGenres = document.getElementById('edit-genres');
+const editRelease = document.getElementById('edit-release');
+const editPortraitBtn = document.getElementById('edit-portrait-btn');
+const editPortraitPath = document.getElementById('edit-portrait-path');
+
+// Même principe que modalOpen : tant que la fiche est ouverte, les
+// raccourcis globaux du rail sont coupés.
+let pageOpen = false;
+let pageGame = null; // le jeu actuellement affiché — pour retrouver (platform, id) à la sauvegarde
+let pickedPortrait = null;
+
+function fmtByline(info, g) {
+  const parts = [platName(g.platform)];
+  if (info.genres?.length) parts.push(info.genres.join(', '));
+  if (info.releaseDate) parts.push(info.releaseDate);
+  // Metacritic existe côté Steam ET RAWG (même échelle /100). Le temps de
+  // jeu, lui, ne vient que de RAWG — absent des métadonnées de store Steam,
+  // ce n'est pas un trou, juste une donnée que cette source-là n'a pas.
+  if (info.metacritic) parts.push(`METACRITIC ${info.metacritic}`);
+  if (info.playtimeHours) parts.push(`~${info.playtimeHours}H DE JEU`);
+  return parts.join('  ·  ');
+}
+
+async function openGamePage(g) {
+  pageOpen = true;
+  pageGame = g;
+  pickedPortrait = null;
+  pageEditForm.hidden = true;
+  pageActions.hidden = false;
+  pageError.textContent = '';
+
+  const bg = resolveArt(g.art.hero || g.art.portrait);
+  pageWall.style.backgroundImage = bg ? `url("${bg}")` : 'none';
+  pageKicker.textContent = 'FICHE';
+  pageTitle.textContent = g.name;
+  pageByline.textContent = '';
+  pageSummary.textContent = 'Récupération des informations…';
+  page.classList.add('on');
+
+  // Le réseau peut prendre un instant ici — c'est une action délibérée de
+  // l'utilisateur, pas le boot, donc l'attente est acceptable (contrairement
+  // aux jaquettes, jamais sur le chemin critique).
+  try {
+    const info = await apiGetGameInfo(g.platform, g.id);
+    if (!pageOpen || pageGame !== g) return; // la fiche a été fermée entre-temps
+    pageGame.info = info; // mémorisé pour pré-remplir le formulaire d'édition
+    pageByline.textContent = fmtByline(info, g) || platName(g.platform).toUpperCase();
+    pageSummary.textContent = info.summary || 'Aucun résumé disponible pour ce jeu.';
+  } catch (e) {
+    pageSummary.textContent = 'Informations indisponibles : ' + String(e.message || e);
+  }
+}
+
+function closeGamePage() {
+  pageOpen = false;
+  page.classList.remove('on');
+  pageEditForm.hidden = true;
+  pageActions.hidden = false;
+}
+
+function openEditForm() {
+  const info = pageGame?.info || {};
+  editSummary.value = info.summary || '';
+  editDeveloper.value = info.developer || '';
+  editPublisher.value = info.publisher || '';
+  editGenres.value = (info.genres || []).join(', ');
+  editRelease.value = info.releaseDate || '';
+  pickedPortrait = null;
+  editPortraitPath.textContent = '— garder l\'actuelle —';
+  pageError.textContent = '';
+  pageActions.hidden = true;
+  pageEditForm.hidden = false;
+}
+
+pageEditBtn.addEventListener('click', openEditForm);
+pageCancelBtn.addEventListener('click', () => {
+  pageEditForm.hidden = true;
+  pageActions.hidden = false;
+});
+pageBack.addEventListener('click', closeGamePage);
+
+editPortraitBtn.addEventListener('click', async () => {
+  try {
+    const path = await apiPickImage();
+    if (!path) return;
+    pickedPortrait = path;
+    editPortraitPath.textContent = path;
+  } catch (e) {
+    pageError.textContent = String(e.message || e);
+  }
+});
+
+pageSaveBtn.addEventListener('click', async () => {
+  if (!pageGame) return;
+  pageError.textContent = '';
+  // Chaîne vide -> null : un champ qu'on n'a pas touché ne doit jamais
+  // écraser une valeur déjà correcte côté cache ou surcharge précédente.
+  const patch = {
+    summary: editSummary.value.trim() || null,
+    developer: editDeveloper.value.trim() || null,
+    publisher: editPublisher.value.trim() || null,
+    genres: editGenres.value.split(',').map(s => s.trim()).filter(Boolean),
+    releaseDate: editRelease.value.trim() || null,
+    portraitOverride: pickedPortrait || null,
+  };
+  try {
+    await apiSaveGameInfo(pageGame.platform, pageGame.id, patch);
+    pageEditForm.hidden = true;
+    pageActions.hidden = false;
+    // Une jaquette a pu changer : on refait tout le cycle get_games plutôt
+    // qu'une mise à jour ciblée, exactement comme après un ajout au bouton +.
+    await boot();
+    await openGamePage(games.find(g => g.platform === pageGame.platform && g.id === pageGame.id) || pageGame);
+  } catch (e) {
+    pageError.textContent = String(e.message || e);
+  }
+});
+
 // Écoute de la croix de fermeture pour réduire dans le System Tray
 document.getElementById('btn-close')?.addEventListener('click', () => {
   apiHideWindow();
@@ -385,6 +538,13 @@ addEventListener('keydown', e => {
     return;
   }
 
+  if (pageOpen) {
+    // Même garde que la modale : la fiche a ses propres champs de saisie en
+    // mode édition, Échap doit fermer LA FICHE, pas réduire toute l'app.
+    if (e.key === 'Escape') { e.preventDefault(); closeGamePage(); }
+    return;
+  }
+
   // ÉCHAP pour réduire dans la barre des tâches
   if (e.key === 'Escape') { apiHideWindow(); return; }
 
@@ -394,6 +554,8 @@ addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') select(index + 1);
   else if (e.key === 'ArrowLeft') select(index - 1);
   else if (e.key === 'Enter' || e.key === ' ') launch();
+  // Y ouvre la fiche du jeu sélectionné — pas de fiche pour la tuile +.
+  else if (e.key === 'y' || e.key === 'Y') { if (index < games.length) openGamePage(games[index]); }
   // Les deux sorties du mode kiosque : sans bordure, il n'y a plus de croix.
   else if (e.key === 'F11') apiToggleFullscreen();
   else if (e.key === 'Escape') apiQuit();
@@ -408,14 +570,18 @@ let padPrev = {};
     const left = p.buttons[14]?.pressed || ax < -0.5;
     const a = p.buttons[0]?.pressed;
     const b = p.buttons[1]?.pressed;
+    const y = p.buttons[3]?.pressed; // mapping standard : 0=A 1=B 2=X 3=Y
     if (modalOpen) {
       if (b && !padPrev.b) closeAddModal(); // B annule, comme partout ailleurs
+    } else if (pageOpen) {
+      if (b && !padPrev.b) closeGamePage();
     } else {
       if (right && !padPrev.right) select(index + 1);
       if (left && !padPrev.left) select(index - 1);
       if (a && !padPrev.a) launch();
+      if (y && !padPrev.y && index < games.length) openGamePage(games[index]);
     }
-    padPrev = { right, left, a, b };
+    padPrev = { right, left, a, b, y };
   }
   requestAnimationFrame(pollPad);
 })();
@@ -423,7 +589,7 @@ let padPrev = {};
 let touchX = null;
 addEventListener('touchstart', e => (touchX = e.touches[0].clientX), { passive: true });
 addEventListener('touchend', e => {
-  if (touchX === null || modalOpen) { touchX = null; return; }
+  if (touchX === null || modalOpen || pageOpen) { touchX = null; return; }
   const dx = e.changedTouches[0].clientX - touchX;
   if (Math.abs(dx) > 45) select(index + (dx < 0 ? 1 : -1));
   touchX = null;

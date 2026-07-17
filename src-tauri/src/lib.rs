@@ -1,4 +1,5 @@
 mod art_downloader;
+mod info_fetcher;
 mod library;
 mod platforms;
 mod vdf;
@@ -170,6 +171,40 @@ fn launch_game(platform: String, id: String, state: tauri::State<AppState>, app:
     result
 }
 
+/// Fiche jeu : lit le cache si présent, sinon interroge Steam (gratuit) ou
+/// RAWG (clé requise) selon la plateforme, fusionné avec la surcharge
+/// utilisateur. Contrairement aux jaquettes, l'attente réseau est acceptable
+/// ici : ouvrir la fiche est une action délibérée, pas le boot.
+#[tauri::command]
+fn get_game_info(platform: String, id: String, state: tauri::State<AppState>) -> Result<info_fetcher::GameInfo, String> {
+    let games = state.games.lock().unwrap();
+    let game = library::find_game(&games, &platform, &id)
+        .ok_or_else(|| "Jeu introuvable dans la bibliothèque scannée.".to_string())?;
+    let name = game.name.clone();
+    drop(games);
+    Ok(info_fetcher::get_or_fetch(&platform, &id, &name))
+}
+
+/// Sélecteur natif filtré aux images — pour remplacer la jaquette d'un jeu
+/// depuis sa fiche.
+#[tauri::command]
+fn pick_image(app: tauri::AppHandle) -> Option<String> {
+    app.dialog()
+        .file()
+        .set_title("Choisir une jaquette")
+        .add_filter("Image", &["jpg", "jpeg", "png", "webp"])
+        .blocking_pick_file()
+        .map(|f| f.to_string())
+}
+
+/// Enregistre les corrections apportées depuis la fiche jeu (résumé,
+/// développeur, jaquette...). N'écrase jamais un rescan futur : la
+/// surcharge est une couche séparée, appliquée par-dessus à chaque lecture.
+#[tauri::command]
+fn save_game_info(platform: String, id: String, patch: info_fetcher::GameInfo) -> Result<(), String> {
+    info_fetcher::save_override(&platform, &id, patch)
+}
+
 #[tauri::command]
 fn hide_window(app: tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -245,7 +280,10 @@ pub fn run() {
             pick_executable,
             pick_optional_file,
             add_custom_game,
-            remove_custom_game
+            remove_custom_game,
+            get_game_info,
+            pick_image,
+            save_game_info
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

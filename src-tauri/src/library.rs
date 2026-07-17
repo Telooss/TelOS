@@ -98,6 +98,9 @@ pub fn scan_all() -> ScanResult {
     // Le réseau n'est JAMAIS sur le chemin critique : ici on ne lit que le disque.
     for game in &mut games {
         crate::art_downloader::fill_from_cache(game);
+        // La surcharge de jaquette (fiche jeu -> "changer la jaquette") gagne
+        // toujours sur l'art auto-détecté, Steam comme SteamGridDB.
+        crate::info_fetcher::apply_portrait_override(game);
     }
 
     // Tri par récence, toutes plateformes confondues — loi n°4.

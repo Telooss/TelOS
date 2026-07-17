@@ -237,7 +237,8 @@ fn sgdb_by_game_id(game_id: u64, kind: &str, api_key: &str) -> Option<Downloaded
 }
 
 /// Encodage URL minimal (espaces et caractères non-ASCII).
-fn urlencoded(s: &str) -> String {
+/// pub(crate) : réutilisé par info_fetcher.rs (recherche RAWG par nom).
+pub(crate) fn urlencoded(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
         match b {
@@ -256,24 +257,26 @@ fn urlencoded(s: &str) -> String {
 // Chargement de la clé API
 // ---------------------------------------------------------------------------
 
-fn load_api_key() -> Option<String> {
+/// Générique sur le nom du champ : réutilisé pour "steamgriddb_api_key" ici
+/// et "rawg_api_key" dans info_fetcher.rs — même fichier de config, deux clés.
+pub(crate) fn load_api_key(field: &str) -> Option<String> {
     // D'abord le fichier local de dev (src-tauri/config.local.json)
     let dev_path = std::env::current_dir()
         .ok()?
         .join("config.local.json");
-    if let Some(key) = read_key_from(&dev_path) {
+    if let Some(key) = read_key_from(&dev_path, field) {
         return Some(key);
     }
     // Puis le fichier en prod (%APPDATA%/telOS/config.local.json)
     let prod_path = std::env::var_os("APPDATA")
         .map(|a| PathBuf::from(a).join("telOS").join("config.local.json"))?;
-    read_key_from(&prod_path)
+    read_key_from(&prod_path, field)
 }
 
-fn read_key_from(path: &PathBuf) -> Option<String> {
+fn read_key_from(path: &PathBuf, field: &str) -> Option<String> {
     let text = fs::read_to_string(path).ok()?;
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
-    v.get("steamgriddb_api_key")?
+    v.get(field)?
         .as_str()
         .filter(|s| !s.is_empty() && !s.starts_with("obtenir"))
         .map(String::from)
@@ -304,7 +307,7 @@ pub fn spawn_if_needed(app: tauri::AppHandle, games: Vec<Game>) {
     }
 
     std::thread::spawn(move || {
-        let api_key = load_api_key();
+        let api_key = load_api_key("steamgriddb_api_key");
         if api_key.is_none() {
             eprintln!("[telos/art] Pas de clé SteamGridDB — seul le CDN Steam sera utilisé.");
         }
