@@ -102,6 +102,18 @@ body {
 }
 .statusbar, .hero, .sysbar { padding: 0 44px; }
 
+.btn-close {
+  position: absolute; top: 26px; right: 44px;
+  width: 32px; height: 32px;
+  background: transparent; border: none; color: var(--ink-dim);
+  font-size: 28px; line-height: 1; cursor: pointer;
+  transition: color 0.15s, transform 0.1s;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+}
+.btn-close:hover { color: var(--spray-magenta); transform: scale(1.1); }
+.btn-close:active { transform: scale(0.9); }
+
 /* --- Bandeau ambiant --- */
 .statusbar { display: flex; align-items: center; justify-content: space-between; }
 .logo { width: 132px; height: 63px; }
@@ -220,6 +232,36 @@ kbd.kq { background: var(--signal-red); color: var(--ink); }
   margin-top: 22px; opacity: 0; letter-spacing: 2px;
 }
 .grant.on { opacity: 1; }
+
+/* --- BOOT SEQUENCE : l'intro DedSec à chaque réveil --- */
+.boot-seq {
+  position: absolute; inset: 0; z-index: 30;
+  background: var(--concrete-900);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.2s;
+}
+.boot-seq.on { opacity: 1; pointer-events: all; }
+.boot-term {
+  position: absolute; top: 40px; left: 44px; right: 44px; bottom: 40px;
+  font-family: var(--mono); font-size: 14px; color: var(--spray-cyan);
+  line-height: 1.4; white-space: pre-wrap; overflow: hidden;
+  text-shadow: 0 0 4px var(--spray-cyan);
+}
+.boot-logo {
+  width: 420px; opacity: 0;
+  filter: drop-shadow(0 0 10px var(--spray-magenta));
+}
+.boot-logo.flash {
+  animation: glitch-flash 0.8s cubic-bezier(.25, .46, .45, .94) forwards;
+}
+@keyframes glitch-flash {
+  0% { opacity: 0; transform: scale(0.9) skewX(20deg); filter: hue-rotate(90deg); }
+  20% { opacity: 1; transform: scale(1.1) skewX(-10deg); filter: hue-rotate(-90deg); }
+  40% { opacity: 0; transform: scale(1) skewX(0); }
+  60% { opacity: 1; transform: scale(1.05) skewX(5deg); }
+  80% { opacity: 0.5; }
+  100% { opacity: 1; transform: scale(1) skewX(0); filter: hue-rotate(0); }
+}
 
 /* --- Bouton + : modale d'ajout ---
    Surface FONCTIONNELLE, pas décorative : contrairement au tag bombé, elle

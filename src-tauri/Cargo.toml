@@ -15,7 +15,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-opener = "2"
 # Sélecteur de fichiers natif pour le bouton + : le WebView ne peut pas
 # parcourir le disque lui-même, il faut la boîte de dialogue de l'OS.
@@ -23,4 +23,9 @@ tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 open = "5"
+# Client HTTP synchrone léger pour le téléchargement de jaquettes en arrière-plan.
+# Pas de runtime async (tokio) : le downloader tourne dans un std::thread::spawn.
+ureq = { version = "2", features = ["json"] }
+tauri-plugin-single-instance = "2.0.0"
+gilrs = "0.10.9"
 

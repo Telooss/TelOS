@@ -1,145 +1,165 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>telOS</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>telOS</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 
-<!-- Le wordmark validé. Défini une fois, réutilisé partout. -->
-<svg width="0" height="0" class="sr-defs" aria-hidden="true">
-  <defs>
-    <g id="mark">
-      <g stroke="#8C8C99" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M 30,62 L 30,160 Q 30,175 46,175"/>
-        <path d="M 10,111 L 52,111"/>
-        <g transform="translate(58,111)">
-          <g transform="translate(64,0) scale(-1,1)">
-            <path d="M 5,32 L 59,32 A 27,27 0 1 0 45.5,55.4"/>
+  <!-- Le wordmark validé. Défini une fois, réutilisé partout. -->
+  <svg width="0" height="0" class="sr-defs" aria-hidden="true">
+    <defs>
+      <g id="mark">
+        <g stroke="#8C8C99" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 30,62 L 30,160 Q 30,175 46,175" />
+          <path d="M 10,111 L 52,111" />
+          <g transform="translate(58,111)">
+            <g transform="translate(64,0) scale(-1,1)">
+              <path d="M 5,32 L 59,32 A 27,27 0 1 0 45.5,55.4" />
+            </g>
+          </g>
+          <path d="M 138,25 L 138,175" />
+        </g>
+        <g fill="none" stroke-width="34" stroke-linecap="round">
+          <g transform="translate(5,-4)" stroke="#FF2D7E">
+            <rect x="171" y="42" width="84" height="116" rx="38" />
+            <path transform="translate(297,42)"
+              d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90" />
+          </g>
+          <g transform="translate(-4,3)" stroke="#FFE93D">
+            <rect x="171" y="42" width="84" height="116" rx="38" />
+            <path transform="translate(297,42)"
+              d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90" />
+          </g>
+          <g stroke="#00E5C7">
+            <rect x="171" y="42" width="84" height="116" rx="38" />
+            <path transform="translate(297,42)"
+              d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90" />
           </g>
         </g>
-        <path d="M 138,25 L 138,175"/>
       </g>
-      <g fill="none" stroke-width="34" stroke-linecap="round">
-        <g transform="translate(5,-4)" stroke="#FF2D7E">
-          <rect x="171" y="42" width="84" height="116" rx="38"/>
-          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
-        </g>
-        <g transform="translate(-4,3)" stroke="#FFE93D">
-          <rect x="171" y="42" width="84" height="116" rx="38"/>
-          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
-        </g>
-        <g stroke="#00E5C7">
-          <rect x="171" y="42" width="84" height="116" rx="38"/>
-          <path transform="translate(297,42)" d="M 80,26 C 80,10 62,0 42,0 C 20,0 4,10 4,28 C 4,48 24,54 42,58 C 60,62 80,68 80,88 C 80,106 62,116 42,116 C 22,116 4,106 4,90"/>
-        </g>
-      </g>
-    </g>
-  </defs>
-</svg>
+    </defs>
+  </svg>
 
-<main class="stage">
+  <main class="stage">
 
-  <!-- Le mur : l'art du jeu sélectionné, plein cadre. Aplat par-dessus, jamais de dégradé. -->
-  <div class="wall" id="wall"></div>
-  <div class="wall-veil"></div>
+    <!-- Le mur : l'art du jeu sélectionné, plein cadre. Aplat par-dessus, jamais de dégradé. -->
+    <div class="wall" id="wall"></div>
+    <div class="wall-veil"></div>
 
-  <!-- La matière : béton, trame, scanline. Statique — donc ~gratuit en H.265,
+    <!-- La matière : béton, trame, scanline. Statique — donc ~gratuit en H.265,
        l'encodeur ne la ré-encode pas entre deux frames. -->
-  <div class="halftone" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
-  <div class="scan" aria-hidden="true"></div>
+    <div class="halftone" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="scan" aria-hidden="true"></div>
 
-  <div class="ui">
+    <div class="ui">
 
-    <!-- Bandeau ambiant permanent (leçon DS) — de vraies stats, pas de la métaphore -->
-    <header class="statusbar">
-      <svg class="logo" viewBox="0 0 420 200" aria-label="telOS"><use href="#mark"/></svg>
-      <div class="readout">
-        <span class="stat"><i class="led" id="led"></i><b id="host">HÔTE LOCAL</b></span>
-        <span class="sep">/</span>
-        <span class="stat"><b id="count">—</b> JEUX</span>
-        <span class="sep">/</span>
-        <span class="stat" id="clock">--:--</span>
-      </div>
-    </header>
+      <!-- Bandeau ambiant permanent (leçon DS) — de vraies stats, pas de la métaphore -->
+      <header class="statusbar">
+        <svg class="logo" viewBox="0 0 420 200" aria-label="telOS">
+          <use href="#mark" />
+        </svg>
+        <div class="readout">
+          <span class="stat"><i class="led" id="led"></i><b id="host">HÔTE LOCAL</b></span>
+          <span class="sep">/</span>
+          <span class="stat"><b id="count">—</b> JEUX</span>
+          <span class="sep">/</span>
+          <span class="stat" id="clock">--:--</span>
+        </div>
+      </header>
 
-    <!-- Le jeu sélectionné : le plus gros objet à l'écran (loi n°1) -->
-    <section class="hero">
-      <div class="kicker" id="kicker"></div>
-      <h1 class="title" id="title">Lecture de la bibliothèque…</h1>
-      <div class="meta" id="meta"></div>
-    </section>
+      <!-- Bouton de fermeture (réduction en tray) -->
+      <button class="btn-close" id="btn-close" aria-label="Réduire dans la zone de notification">&times;</button>
 
-    <!-- Rail de récence (loi n°4 : la récence bat le rangement) -->
-    <section class="railvp">
-      <ul class="rail" id="rail"></ul>
-    </section>
+      <!-- Le jeu sélectionné : le plus gros objet à l'écran (loi n°1) -->
+      <section class="hero">
+        <div class="kicker" id="kicker"></div>
+        <h1 class="title" id="title">Lecture de la bibliothèque…</h1>
+        <div class="meta" id="meta"></div>
+      </section>
 
-    <!-- Barre système fine (leçon Switch) -->
-    <footer class="sysbar">
-      <span class="hint"><kbd class="ka">A</kbd> Jouer</span>
-      <span class="hint"><kbd>◀ ▶</kbd> Parcourir</span>
-      <span class="hint"><kbd>Y</kbd> Bibliothèque</span>
-      <!-- Sans bordure, il n'y a plus de croix : la sortie doit être visible. -->
-      <span class="hint pull"><kbd>F11</kbd> Fenêtré</span>
-      <span class="hint"><kbd class="kq">ÉCHAP</kbd> Quitter</span>
-    </footer>
-  </div>
+      <!-- Rail de récence (loi n°4 : la récence bat le rangement) -->
+      <section class="railvp">
+        <ul class="rail" id="rail"></ul>
+      </section>
 
-  <!-- Le tag bombé : purement décoratif, jamais dans le chemin de la nav.
+      <!-- Barre système fine (leçon Switch) -->
+      <footer class="sysbar">
+        <span class="hint"><kbd class="ka">A</kbd> Jouer</span>
+        <span class="hint"><kbd>◀ ▶</kbd> Parcourir</span>
+        <span class="hint"><kbd>Y</kbd> Bibliothèque</span>
+        <!-- Sans bordure, il n'y a plus de croix : la sortie doit être visible. -->
+        <span class="hint pull"><kbd>F11</kbd> Fenêtré</span>
+        <span class="hint"><kbd class="kq">ÉCHAP</kbd> Quitter</span>
+      </footer>
+    </div>
+
+    <!-- Le tag bombé : purement décoratif, jamais dans le chemin de la nav.
        Le chaos en surface, la rigueur en dessous. -->
-  <div class="tags" aria-hidden="true">
-    <div class="stencil">telOS</div>
-  </div>
+    <div class="tags" aria-hidden="true">
+      <div class="stencil">telOS</div>
+    </div>
 
-  <!-- L'INTRUSION : le seul endroit où la fiction vit -->
-  <div class="intrusion" id="intrusion" aria-hidden="true">
-    <pre class="log" id="log"></pre>
-    <div class="grant" id="grant">ACCÈS ACCORDÉ</div>
-  </div>
+    <!-- L'INTRUSION : le seul endroit où la fiction vit -->
+    <div class="intrusion" id="intrusion" aria-hidden="true">
+      <pre class="log" id="log"></pre>
+      <div class="grant" id="grant">ACCESS GRANTED</div>
+    </div>
 
-  <!-- Bouton + : ajouter un jeu à la main (.exe hors Steam, émulateur+ROM).
+    <!-- BOOT SEQUENCE : l'intro DedSec à chaque réveil -->
+    <div class="boot-seq on" id="boot-seq" aria-hidden="true">
+      <pre class="boot-term" id="boot-term"></pre>
+      <div class="boot-logo"><svg viewBox="0 0 420 200">
+          <use href="#mark" />
+        </svg></div>
+    </div>
+
+    <!-- Bouton + : ajouter un jeu à la main (.exe hors Steam, émulateur+ROM).
        Aucun réseau, aucun compte requis. -->
-  <div class="modal" id="add-modal" aria-hidden="true">
-    <div class="modal-box">
-      <div class="modal-title">AJOUTER UN JEU</div>
+    <div class="modal" id="add-modal" aria-hidden="true">
+      <div class="modal-box">
+        <div class="modal-title">AJOUTER UN JEU</div>
 
-      <label class="field">
-        <span>Nom</span>
-        <input type="text" id="add-name" placeholder="Nom affiché" autocomplete="off" />
-      </label>
+        <label class="field">
+          <span>Nom</span>
+          <input type="text" id="add-name" placeholder="Nom affiché" autocomplete="off" />
+        </label>
 
-      <label class="field">
-        <span>Plateforme</span>
-        <input type="text" id="add-platform" placeholder="PC" autocomplete="off" />
-      </label>
+        <label class="field">
+          <span>Plateforme</span>
+          <input type="text" id="add-platform" placeholder="PC" autocomplete="off" />
+        </label>
 
-      <div class="field">
-        <span>Exécutable</span>
-        <button type="button" class="pick" id="add-exec-btn">Choisir…</button>
-        <div class="picked" id="add-exec-path">— aucun —</div>
-      </div>
+        <div class="field">
+          <span>Exécutable</span>
+          <button type="button" class="pick" id="add-exec-btn">Choisir…</button>
+          <div class="picked" id="add-exec-path">— aucun —</div>
+        </div>
 
-      <div class="field">
-        <span>Argument (ROM, optionnel)</span>
-        <button type="button" class="pick" id="add-arg-btn">Choisir…</button>
-        <div class="picked" id="add-arg-path">— aucun —</div>
-      </div>
+        <div class="field">
+          <span>Argument (ROM, optionnel)</span>
+          <button type="button" class="pick" id="add-arg-btn">Choisir…</button>
+          <div class="picked" id="add-arg-path">— aucun —</div>
+        </div>
 
-      <div class="modal-error" id="add-error"></div>
+        <div class="modal-error" id="add-error"></div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="add-cancel">Annuler</button>
-        <button type="button" class="btn btn-go" id="add-submit" disabled>Ajouter</button>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="add-cancel">Annuler</button>
+          <button type="button" class="btn btn-go" id="add-submit" disabled>Ajouter</button>
+        </div>
       </div>
     </div>
-  </div>
 
-</main>
+  </main>
 
-<script src="app.js"></script>
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>

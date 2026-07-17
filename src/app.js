@@ -50,6 +50,11 @@ async function apiQuit() {
   if (invoke) return invoke('quit_app');
 }
 
+async function apiHideWindow() {
+  const invoke = tauriInvoke();
+  if (invoke) return invoke('hide_window');
+}
+
 // Le sélecteur de fichiers natif n'existe pas en navigateur (dev-server.js) :
 // on échoue clairement plutôt que de laisser le bouton ne rien faire.
 async function apiPickExecutable() {
@@ -112,6 +117,50 @@ function fail(e) {
   console.error('[telOS]', e);
 }
 
+// --- Séquence de Boot (DedSec Glitch) ---
+const BOOT_LINES = [
+  "INITIALIZING telOS KERNEL...",
+  "BYPASSING SECURE BOOT...",
+  "MOUNTING VIRTUAL FILESYSTEM...",
+  "ESTABLISHING HANDSHAKE...",
+  "DECRYPTING PAYLOAD...",
+  "ACCESS GRANTED."
+];
+
+function playBootSequence() {
+  const seq = document.getElementById('boot-seq');
+  const term = document.getElementById('boot-term');
+  const logo = seq.querySelector('.boot-logo');
+  
+  seq.classList.add('on');
+  term.textContent = '';
+  logo.classList.remove('flash');
+
+  // Affichage des lignes du terminal plus lent
+  BOOT_LINES.forEach((l, i) => {
+    setTimeout(() => { term.textContent += l + '\n'; }, i * 180);
+  });
+
+  // À la fin des lignes, on attend un peu, on flash le logo
+  const textEnd = BOOT_LINES.length * 180;
+  
+  setTimeout(() => {
+    logo.classList.add('flash');
+  }, textEnd + 200);
+
+  // Et on cache l'overlay plus tard pour laisser le glitch visuel s'exprimer
+  setTimeout(() => {
+    seq.classList.remove('on');
+  }, textEnd + 1200);
+}
+
+// Réveil depuis l'arrière-plan (ex: Moonlight s'y connecte, ou retour de jeu via manette)
+window.__TAURI__?.event?.listen('wake-up', () => {
+  playBootSequence();
+  // On re-scan les jeux à chaque réveil pour toujours être à jour !
+  boot().catch(fail);
+});
+
 async function boot() {
   const data = await apiGetGames();
   if (!data || !Array.isArray(data.games)) {
@@ -157,7 +206,10 @@ let railX = 0;
 function select(i) {
   // games.length est une position valide : c'est la tuile +, toujours en
   // dernier, jamais un jeu.
-  index = Math.max(0, Math.min(games.length, i));
+  const newIndex = Math.max(0, Math.min(games.length, i));
+  if (newIndex !== index) audio.play('move');
+  index = newIndex;
+  
   const onAddTile = index === games.length;
 
   [...rail.children].forEach((c, k) => c.classList.toggle('sel', k === index));
@@ -318,6 +370,11 @@ elSubmit.addEventListener('click', async () => {
   }
 });
 
+// Écoute de la croix de fermeture pour réduire dans le System Tray
+document.getElementById('btn-close')?.addEventListener('click', () => {
+  apiHideWindow();
+});
+
 // --- Entrées : clavier, manette, tactile ---
 addEventListener('keydown', e => {
   if (modalOpen) {
@@ -327,6 +384,10 @@ addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); closeAddModal(); }
     return;
   }
+
+  // ÉCHAP pour réduire dans la barre des tâches
+  if (e.key === 'Escape') { apiHideWindow(); return; }
+
   // La répétition auto de l'OS fait défiler la sélection en rafale et rend la
   // nav imprévisible : on n'accepte que des pressions discrètes.
   if (e.repeat) return;
@@ -375,9 +436,45 @@ addEventListener('touchend', e => {
   setTimeout(tick, 10000);
 })();
 
+// --- Jaquettes en arrière-plan : écoute des téléchargements terminés ---
+// Le cœur Rust télécharge les visuels manquants après le boot et émet un
+// événement par jeu mis à jour. L'UI se rafraîchit sans recharger la page.
+if (window.__TAURI__?.event) {
+  window.__TAURI__.event.listen('game-art-ready', (event) => {
+    const { platform, id, art } = event.payload;
+    const game = games.find(g => g.platform === platform && g.id === id);
+    if (!game) return;
+
+    // Met à jour uniquement les visuels qui ont changé.
+    if (art.portrait) game.art.portrait = art.portrait;
+    if (art.hero) game.art.hero = art.hero;
+    if (art.logo) game.art.logo = art.logo;
+
+    // Rafraîchit la carte dans le rail.
+    const gi = games.indexOf(game);
+    if (gi >= 0 && gi < rail.children.length) {
+      const src = resolveArt(game.art.portrait);
+      const li = rail.children[gi];
+      if (src) {
+        const img = li.querySelector('img');
+        const fallback = li.querySelector('.fallback');
+        if (img) {
+          img.src = src;
+        } else if (fallback) {
+          fallback.replaceWith(Object.assign(document.createElement('img'), { src, alt: '' }));
+        }
+      }
+    }
+
+    // Si ce jeu est sélectionné, rafraîchit aussi le mur de fond.
+    if (gi === index) select(index);
+  });
+}
+
 // select() gère seul le cas 0 jeu (la tuile + reste toujours positionnable) —
 // plus besoin de conditionner sur games.length.
 addEventListener('resize', () => select(index));
 
 // Aucune erreur ne doit pouvoir passer inaperçue et laisser l'écran figé.
+playBootSequence();
 boot().catch(fail);

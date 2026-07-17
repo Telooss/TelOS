@@ -26,21 +26,21 @@ Jouer confortablement à ses titres PC depuis un handheld, y compris **via un pa
 
 ## État
 
-🚧 **Pré-alpha.** Architecture et identité visuelle arrêtées. Rien de fonctionnel n'est encore livré.
+🚧 **Pré-alpha.** Le socle natif est fonctionnel. L'application scanne les jeux, les lance, et gère le cycle de vie avancé (System Tray, Gamepad). Il reste à peaufiner l'UI et intégrer les fonctionnalités de communication.
 
 👉 Plan de réalisation phasé complet (design, natif, streaming, et les extensions musique / communication / multi-client) : voir [`docs/roadmap.md`](docs/roadmap.md) — miroir du plan tenu dans Notion.
 
 | Chantier | État |
 |---|---|
 | Architecture (hôte vs client) | ✅ Arrêtée |
-| Choix du moteur | ✅ Tauri (voir ci-dessous) |
+| Choix du moteur | ✅ Tauri |
 | Recherche design | ✅ [`docs/design-research.md`](docs/design-research.md) |
 | Direction artistique (DedSec / WD2) | ✅ Arrêtée |
 | Système typographique (`telOS`, Oxanium + Doctor Glitch) | ✅ Arrêté |
-| Maquette du shell | 🔄 En cours |
-| Cœur natif Tauri | ⬜ À faire |
-| Scan bibliothèque Steam | ⬜ À faire |
-| Lancement des jeux | ⬜ À faire |
+| Maquette du shell | ✅ Fonctionnelle (Glitch séquence, navigation) |
+| Cœur natif Tauri & Audio | ✅ Intégrés (Web Audio API) |
+| Scan bibliothèque (Custom & Émulateurs) | ✅ Implémenté (Rust) avec cache |
+| Lancement des jeux & Cycle de vie | ✅ Implémenté (Mise en veille 0%, System Tray, Xbox Button wake-up via Gilrs) |
 | Intégration Sunshine | ⬜ À faire |
 | Musique / communication / multi-client | ⬜ À faire — voir roadmap |
 
@@ -87,9 +87,14 @@ prototype/                Exploration jetable (première itération web, abandon
 
 ## Développement
 
+Pour lancer le cœur natif (qui intègre le shell UI et le backend Rust) :
+
 ```bash
-npm run dev         # sert src/ sur http://localhost:5173
+npm install
+npm run tauri dev
 ```
+
+La commande `npm run dev` (qui utilise `scripts/dev-server.js`) reste disponible pour travailler purement sur l'UI front-end sans compiler le code Rust.
 
 ## Prototype (historique)
 

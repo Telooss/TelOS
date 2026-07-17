@@ -94,6 +94,12 @@ pub fn scan_all() -> ScanResult {
     run_provider(steam::ID, steam::NAME, steam::detect(), steam::scan, &mut games, &mut platforms);
     run_provider(custom::ID, custom::NAME, custom::detect(), custom::scan, &mut games, &mut platforms);
 
+    // Complète les visuels manquants avec le cache local (%APPDATA%/telOS/cache/).
+    // Le réseau n'est JAMAIS sur le chemin critique : ici on ne lit que le disque.
+    for game in &mut games {
+        crate::art_downloader::fill_from_cache(game);
+    }
+
     // Tri par récence, toutes plateformes confondues — loi n°4.
     games.sort_by(|a, b| b.last_played.cmp(&a.last_played));
     ScanResult { games, platforms }
