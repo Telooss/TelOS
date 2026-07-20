@@ -375,13 +375,52 @@ kbd.kq { background: var(--signal-red); color: var(--ink); }
   font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: .96;
   letter-spacing: -1.5px; text-transform: uppercase;
 }
-.page-byline {
-  font-family: var(--mono); font-size: 13px; color: var(--ink-dim);
-  margin-top: 14px; letter-spacing: .5px;
+/* Stats labellisées façon store (Développeur/Éditeur/Sortie/Note/Temps de
+   jeu) : chaque bloc a un label mono discret au-dessus d'une valeur nette —
+   plus scannable qu'une ligne compressée séparée par des points. */
+.page-stats {
+  display: flex; flex-wrap: wrap; gap: 26px;
+  margin-top: 20px; padding-top: 18px; border-top: 2px solid var(--concrete-700);
 }
+.page-stat { display: flex; flex-direction: column; gap: 4px; }
+.page-stat .label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.page-stat .value {
+  font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 15px; color: var(--ink);
+}
+
+/* Genres en puces — bords nets, aplat, jamais de pilule arrondie :
+   notre système garde ses angles même quand le store fait la ref. */
+.page-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--ink-dim);
+  border: 2px solid var(--concrete-700); padding: 5px 10px;
+}
+
 .page-summary {
   font-size: 16px; line-height: 1.6; color: var(--ink);
   margin-top: 22px; max-width: 62ch;
 }
-.page-actions { margin-top: 28px; }
+
+/* JOUER domine — même logique de hiérarchie que BUY sur les refs, sauf
+   qu'ici on possède déjà le jeu : plus gros, plus net que le reste. */
+.page-actions { margin-top: 30px; display: flex; gap: 14px; }
+.btn-play {
+  background: var(--spray-cyan); color: var(--concrete-900);
+  font-size: 16px; padding: 15px 34px; letter-spacing: 1.5px;
+}
+.btn-play:hover { background: var(--ink); }
+
+/* Badge d'âge, coin — même emplacement que PEGI/ESRB sur Xbox et PlayStation. */
+.page-age {
+  position: absolute; top: 26px; right: 44px; z-index: 2;
+  background: var(--concrete-800); color: var(--ink);
+  border: 2px solid var(--concrete-700);
+  font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 1px;
+  padding: 8px 14px;
+}
+
 .page-edit-form { margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--concrete-700); }

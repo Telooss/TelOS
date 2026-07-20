@@ -393,9 +393,12 @@ const page = document.getElementById('game-page');
 const pageWall = document.getElementById('page-wall');
 const pageKicker = document.getElementById('page-kicker');
 const pageTitle = document.getElementById('page-title');
-const pageByline = document.getElementById('page-byline');
+const pageStats = document.getElementById('page-stats');
+const pageChips = document.getElementById('page-chips');
+const pageAge = document.getElementById('page-age');
 const pageSummary = document.getElementById('page-summary');
 const pageActions = document.getElementById('page-actions');
+const pagePlayBtn = document.getElementById('page-play');
 const pageEditForm = document.getElementById('page-edit-form');
 const pageError = document.getElementById('page-error');
 const pageBack = document.getElementById('page-back');
@@ -416,16 +419,32 @@ let pageOpen = false;
 let pageGame = null; // le jeu actuellement affiché — pour retrouver (platform, id) à la sauvegarde
 let pickedPortrait = null;
 
-function fmtByline(info, g) {
-  const parts = [platName(g.platform)];
-  if (info.genres?.length) parts.push(info.genres.join(', '));
-  if (info.releaseDate) parts.push(info.releaseDate);
+/** Un stat block : label mono discret au-dessus d'une valeur nette. */
+function statBlock(label, value) {
+  const el = document.createElement('div');
+  el.className = 'page-stat';
+  el.innerHTML = `<span class="label">${label}</span><span class="value">${value}</span>`;
+  return el;
+}
+
+/** Remplit les stats labellisées + les puces de genre. Rien à la place d'un
+ * champ absent — pas de tiret ni de "N/A" qui alourdit l'écran pour rien. */
+function renderPageStats(info, g) {
+  pageStats.innerHTML = '';
+  pageStats.appendChild(statBlock('Plateforme', platName(g.platform)));
+  if (info.developer) pageStats.appendChild(statBlock('Développeur', info.developer));
+  if (info.publisher && info.publisher !== info.developer) pageStats.appendChild(statBlock('Éditeur', info.publisher));
+  if (info.releaseDate) pageStats.appendChild(statBlock('Sortie', info.releaseDate));
   // Metacritic existe côté Steam ET RAWG (même échelle /100). Le temps de
   // jeu, lui, ne vient que de RAWG — absent des métadonnées de store Steam,
   // ce n'est pas un trou, juste une donnée que cette source-là n'a pas.
-  if (info.metacritic) parts.push(`METACRITIC ${info.metacritic}`);
-  if (info.playtimeHours) parts.push(`~${info.playtimeHours}H DE JEU`);
-  return parts.join('  ·  ');
+  if (info.metacritic) pageStats.appendChild(statBlock('Metacritic', info.metacritic));
+  if (info.playtimeHours) pageStats.appendChild(statBlock('Temps de jeu', `~${info.playtimeHours} H`));
+
+  pageChips.innerHTML = (info.genres || []).map(g => `<span class="chip">${g}</span>`).join('');
+
+  pageAge.hidden = !info.ageRating;
+  pageAge.textContent = info.ageRating || '';
 }
 
 async function openGamePage(g) {
@@ -440,7 +459,9 @@ async function openGamePage(g) {
   pageWall.style.backgroundImage = bg ? `url("${bg}")` : 'none';
   pageKicker.textContent = 'FICHE';
   pageTitle.textContent = g.name;
-  pageByline.textContent = '';
+  pageStats.innerHTML = '';
+  pageChips.innerHTML = '';
+  pageAge.hidden = true;
   pageSummary.textContent = 'Récupération des informations…';
   page.classList.add('on');
 
@@ -451,12 +472,20 @@ async function openGamePage(g) {
     const info = await apiGetGameInfo(g.platform, g.id);
     if (!pageOpen || pageGame !== g) return; // la fiche a été fermée entre-temps
     pageGame.info = info; // mémorisé pour pré-remplir le formulaire d'édition
-    pageByline.textContent = fmtByline(info, g) || platName(g.platform).toUpperCase();
+    renderPageStats(info, g);
     pageSummary.textContent = info.summary || 'Aucun résumé disponible pour ce jeu.';
   } catch (e) {
     pageSummary.textContent = 'Informations indisponibles : ' + String(e.message || e);
   }
 }
+
+// JOUER depuis la fiche : on ferme la page puis on déclenche EXACTEMENT le
+// même lancement que depuis le rail — aucune logique dupliquée. pageGame
+// correspond toujours à games[index], donc launch() cible le bon jeu.
+pagePlayBtn.addEventListener('click', () => {
+  closeGamePage();
+  launch();
+});
 
 function closeGamePage() {
   pageOpen = false;

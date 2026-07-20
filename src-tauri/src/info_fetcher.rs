@@ -37,6 +37,10 @@ pub struct GameInfo {
     // toujours None pour game.platform == "steam" — normal, pas un bug).
     #[serde(rename = "playtimeHours")]
     pub playtime_hours: Option<u32>,
+    // Classification d'âge — RAWG (esrb_rating.name, ex. "Mature") ou Steam
+    // (required_age, reformaté en "18+"). Badge coin, comme sur les stores.
+    #[serde(rename = "ageRating")]
+    pub age_rating: Option<String>,
     // Chemin local choisi par l'utilisateur pour remplacer la jaquette
     // auto-détectée. None = on garde l'art normal (Steam/cache/SteamGridDB).
     #[serde(rename = "portraitOverride", skip_serializing_if = "Option::is_none")]
@@ -114,6 +118,7 @@ fn merge(base: GameInfo, over: Option<&GameInfo>) -> GameInfo {
         release_date: o.release_date.clone().or(base.release_date),
         metacritic: o.metacritic.or(base.metacritic),
         playtime_hours: o.playtime_hours.or(base.playtime_hours),
+        age_rating: o.age_rating.clone().or(base.age_rating),
         portrait_override: o.portrait_override.clone(),
     }
 }
@@ -165,6 +170,11 @@ fn fetch_steam(appid: &str) -> Option<GameInfo> {
         // plat, d'où la différence de traitement entre les deux sources.
         metacritic: data.get("metacritic").and_then(|v| v.get("score")).and_then(|v| v.as_u64()).map(|v| v as u32),
         playtime_hours: None, // pas une donnée de store Steam, seulement côté RAWG
+        age_rating: data
+            .get("required_age")
+            .and_then(|v| v.as_str().and_then(|s| s.parse::<u32>().ok()).or_else(|| v.as_u64().map(|n| n as u32)))
+            .filter(|&age| age > 0)
+            .map(|age| format!("{age}+")),
         portrait_override: None,
     })
 }
@@ -225,6 +235,7 @@ fn fetch_rawg(name: &str, api_key: &str) -> Option<GameInfo> {
         release_date: detail.get("released").and_then(|v| v.as_str()).map(String::from),
         metacritic: detail.get("metacritic").and_then(|v| v.as_u64()).map(|v| v as u32),
         playtime_hours: detail.get("playtime").and_then(|v| v.as_u64()).map(|v| v as u32).filter(|&h| h > 0),
+        age_rating: detail.get("esrb_rating").and_then(|v| v.get("name")).and_then(|v| v.as_str()).map(String::from),
         portrait_override: None,
     })
 }
@@ -273,6 +284,7 @@ pub fn save_override(platform: &str, id: &str, patch: GameInfo) -> Result<(), St
         release_date: patch.release_date.or(existing.release_date),
         metacritic: patch.metacritic.or(existing.metacritic),
         playtime_hours: patch.playtime_hours.or(existing.playtime_hours),
+        age_rating: patch.age_rating.or(existing.age_rating),
         portrait_override: patch.portrait_override.or(existing.portrait_override),
     };
     all.insert(key, merged);

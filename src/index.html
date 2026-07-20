@@ -167,13 +167,26 @@
 
       <button type="button" class="page-back" id="page-back">‹ RETOUR</button>
 
+      <!-- Badge d'âge, coin — même emplacement que PEGI/ESRB sur les stores -->
+      <div class="page-age" id="page-age" hidden></div>
+
       <div class="page-content">
         <div class="page-kicker" id="page-kicker"></div>
         <h1 class="page-title" id="page-title"></h1>
-        <div class="page-byline" id="page-byline"></div>
+
+        <!-- Stats labellisées façon store (développeur/éditeur/sortie/note/temps
+             de jeu) — plus lisible d'un coup d'œil qu'une ligne compressée. -->
+        <div class="page-stats" id="page-stats"></div>
+
+        <!-- Genres en puces, pas du texte à la suite -->
+        <div class="page-chips" id="page-chips"></div>
+
         <p class="page-summary" id="page-summary"></p>
 
+        <!-- JOUER domine, comme "BUY" / "Ajouter à la bibliothèque" sur les
+             refs — sauf qu'on possède déjà le jeu, donc on le lance. -->
         <div class="page-actions" id="page-actions">
+          <button type="button" class="btn btn-play" id="page-play">▶ JOUER</button>
           <button type="button" class="btn btn-ghost" id="page-edit">Éditer la fiche</button>
         </div>
 
